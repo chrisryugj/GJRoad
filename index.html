@@ -291,6 +291,7 @@ function showDropdown() {
     div.onclick = () => {
       currentAddress = addr;
       viewedAddresses.add(addr);
+      saveViewedAddresses();
       input.value = addr;
       document.getElementById("statusSelect").value = statusMap[addr] || "";
       const customInput = document.getElementById("customStatusInput");
