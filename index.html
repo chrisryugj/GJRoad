@@ -245,6 +245,11 @@ let preferredMap = localStorage.getItem("preferredMap") || "naver";
 
 document.addEventListener("DOMContentLoaded", function() {
   // 상태맵, 지도앱은 이미 복원 중
+  const savedViewed = localStorage.getItem("viewedAddresses");
+if (savedViewed) {
+  viewedAddresses = new Set(JSON.parse(savedViewed));
+}
+
   const savedList = localStorage.getItem("addressList");
   if (savedList) {
     주소목록 = JSON.parse(savedList);
