@@ -330,7 +330,7 @@ function handleStatusChange() {
     saveStatus();
   }
 }
-  function saveAddressList() {
+ function saveAddressList() {
   localStorage.setItem("addressList", JSON.stringify(주소목록));
 }
 
@@ -351,11 +351,13 @@ function saveStatus() {
 function loadAddressFile(event) {
   const file = event.target.files[0];
   if (!file) return;
+
   const reader = new FileReader();
   reader.onload = function(e) {
     const lines = e.target.result.split(/\r?\n/).filter(line => line.trim());
     const newList = [];
     let added = 0;
+
     lines.forEach(line => {
       const [addr, status] = line.split('\t');
       const trimmedAddr = addr?.trim();
@@ -367,11 +369,21 @@ function loadAddressFile(event) {
         statusMap[trimmedAddr] = status.trim();
       }
     });
+
     주소목록 = [...주소목록, ...newList];
     alert(`주소 파일 업로드 완료: ${lines.length}건 중 ${added}건 추가됨 (총 ${주소목록.length}건)`);
+
+    // ✅ 이 두 줄 추가로 영구 저장 처리
+    saveAddressList();
+    localStorage.setItem("statusMap", JSON.stringify(statusMap));
   };
+
   reader.readAsText(file, 'UTF-8');
-  saveAddressList();
+saveAddressList(); // ← 이거 추가!
+localStorage.setItem("statusMap", JSON.stringify(statusMap)); // 상태도 함께 저장
+}
+
+
 }
 
 function addFromTextarea() {
