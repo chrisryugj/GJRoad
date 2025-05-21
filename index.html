@@ -115,9 +115,14 @@
       text-align: center;
       font-size: 0.9rem;
     }
-    tr.status-출장완료 { background-color: #e8f5e9; }
-    tr.status-미출장 { background-color: #ffebee; }
-    tr.status-직접입력 { background-color: #eceff1; }
+tr.status-출장완료 { background-color: #e8f5e9; }
+tr.status-미출장 { background-color: #ffebee; }
+tr.status-미선택 { background-color: #eceff1; }
+
+/* 기타 직접입력 상태 (커스텀) */
+tr.status-직접입력 {
+  background-color: #fff9c4; /* 연노랑 */
+}
     footer {
       display: flex;
       justify-content: center;
@@ -384,14 +389,18 @@ function updateTable() {
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
   주소목록.forEach(addr => {
-    const status = statusMap[addr] || "미선택";
+    const rawStatus = statusMap[addr] || "미선택";
+    const classStatus = ["출장완료", "미출장", "미선택"].includes(rawStatus)
+      ? rawStatus
+      : "직접입력";  // 직접입력은 전부 같은 배경색 적용
+
     const row = document.createElement("tr");
-    row.className = `status-${status}`;
-    row.innerHTML = `<td>${addr}</td><td>${status}</td>`;
+    row.className = `status-${classStatus}`;
+    row.innerHTML = `<td>${addr}</td><td>${rawStatus}</td>`;
     tbody.appendChild(row);
   });
-  document.getElementById("tableSummary").innerText = "총 " + 주소목록.length + "건";
 }
+
 
 function copyTable() {
   let text = "주소\t상태\n";
