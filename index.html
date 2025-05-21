@@ -373,17 +373,12 @@ function loadAddressFile(event) {
     주소목록 = [...주소목록, ...newList];
     alert(`주소 파일 업로드 완료: ${lines.length}건 중 ${added}건 추가됨 (총 ${주소목록.length}건)`);
 
-    // ✅ 이 두 줄 추가로 영구 저장 처리
+    // ✅ 여기에 저장 로직 포함
     saveAddressList();
     localStorage.setItem("statusMap", JSON.stringify(statusMap));
   };
 
   reader.readAsText(file, 'UTF-8');
-saveAddressList(); // ← 이거 추가!
-localStorage.setItem("statusMap", JSON.stringify(statusMap)); // 상태도 함께 저장
-}
-
-
 }
 
 function addFromTextarea() {
