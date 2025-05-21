@@ -40,23 +40,19 @@
       margin-top: 8px;
       border-radius: 8px;
     }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-    .tabs button {
-      flex: 1 1 auto;
-      padding: 8px;
-      margin: 2px;
-      font-size: 0.9rem;
-      border: none;
-      background-color: #ccc;
-      color: #000;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+  .tabs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.tabs button {
+  flex: 0 1 auto; /* 줄어들거나 늘어나지 않도록 조정 */
+  white-space: nowrap;
+  padding: 8px 16px;
+}
     .tabs button.active {
       background-color: #1b3c82;
       color: #fff;
