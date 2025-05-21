@@ -173,8 +173,8 @@
     <input id="addrInput" type="text" placeholder="주소 선택..." onfocus="this.value=''; showDropdown();" oninput="showDropdown()" onclick="showDropdown()">
     <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 
-    <select id="statusSelect" onchange="handleStatusChange()" placeholder="메모 하기...">
-      <option value="">미선택</option>
+    <select id="statusSelect" onchange="handleStatusChange()">
+      <option value="" disabled selected hidden>메모 남기기</option>
       <option value="출장완료">출장완료</option>
       <option value="미출장">미출장</option>
       <option value="직접입력">직접입력 (아래 입력)</option>
