@@ -182,17 +182,24 @@ tr.status-직접입력 {
   <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 </div>
  
-  <div class="card-ui">
-  <label for="statusSelect">📝 출장 상태 선택
-  </label>
+ <div class="card-ui">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+    <label for="statusSelect" style="font-weight: bold;">📝 출장 상태 선택</label>
+    <label style="font-size: 0.9rem;">
+      <input type="checkbox" id="memoModeToggle" onchange="saveMemoMode()"> 메모모드
+    </label>
+  </div>
+  
   <select id="statusSelect" onchange="handleStatusChange()">
     <option value="" disabled selected hidden>선택 / 메모 남기기</option>
     <option value="출장완료">출장완료</option>
     <option value="미출장">미출장</option>
     <option value="직접입력">직접입력 (아래 입력)</option>
   </select>
+  
   <input id="customStatusInput" type="text" maxlength="100" placeholder="상태 직접 입력 (100자 이내)" style="display:none;" oninput="saveStatus()">
 </div>
+
 <hr style="border: none; height: 4px; background-color: #ccc; margin: 0 0 15px 0;">
 <div class="card-ui">
   <label for="fileUpload">📁 주소 파일 업로드</label>
@@ -242,6 +249,18 @@ let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
 let currentAddress = null;
 let viewedAddresses = new Set();
 let preferredMap = localStorage.getItem("preferredMap") || "naver";
+  let memoMode = localStorage.getItem("memoMode") === "true";
+
+function saveMemoMode() {
+  memoMode = document.getElementById("memoModeToggle").checked;
+  localStorage.setItem("memoMode", memoMode);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const toggle = document.getElementById("memoModeToggle");
+  if (toggle) toggle.checked = memoMode;
+});
+
 
 document.addEventListener("DOMContentLoaded", function() {
   // 상태맵, 지도앱은 이미 복원 중
@@ -290,28 +309,37 @@ function showDropdown() {
   주소목록.filter(addr => addr.includes(input.value)).forEach(addr => {
     const div = document.createElement("div");
     div.className = "dropdown-item";
+
+
     if (viewedAddresses.has(addr)) div.classList.add("viewed");
     if (statusMap[addr]) div.classList.add("status-marked");
     div.textContent = statusMap[addr] ? addr + " [" + statusMap[addr] + "]" : addr;
-    div.onclick = () => {
-      currentAddress = addr;
-      viewedAddresses.add(addr);
-      saveViewedAddresses();
-      input.value = addr;
-      document.getElementById("statusSelect").value = statusMap[addr] || "";
-      const customInput = document.getElementById("customStatusInput");
-      const value = statusMap[addr] || "";
-      if (!["출장완료", "미출장", ""].includes(value)) {
-        document.getElementById("statusSelect").value = "직접입력";
-        customInput.style.display = "block";
-        customInput.value = value;
-      } else {
-        customInput.style.display = "none";
-        customInput.value = "";
-      }
-      dropdown.style.display = "none";
-      openMapInNewTab();
-    };
+ div.onclick = () => {
+  currentAddress = addr;
+  viewedAddresses.add(addr);
+  saveViewedAddresses();
+  document.getElementById("addrInput").value = addr;
+  document.getElementById("statusSelect").value = statusMap[addr] || "";
+  const value = statusMap[addr] || "";
+
+  const customInput = document.getElementById("customStatusInput");
+  if (!["출장완료", "미출장", ""].includes(value)) {
+    document.getElementById("statusSelect").value = "직접입력";
+    customInput.style.display = "block";
+    customInput.value = value;
+  } else {
+    customInput.style.display = "none";
+    customInput.value = "";
+  }
+
+  dropdown.style.display = "none";
+
+  // ✅ 메모모드가 아닐 때만 지도 열기
+  if (!memoMode) {
+    openMapInNewTab();
+  }
+};
+
     dropdown.appendChild(div);
   });
 }
