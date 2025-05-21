@@ -71,12 +71,25 @@
     .tab-content.active {
       display: block;
     }
-    .card-ui {
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      padding: 15px;
-      margin-bottom: 15px;
+.card-ui {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  padding: 15px;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+/* 카드 사이 구분선 */
+.card-ui + .card-ui::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #ccc;
+}
     }
     input[type="text"], input[type="file"], select, button, textarea {
       width: 100%;
@@ -176,7 +189,7 @@
    <div class="card-ui">
   <label for="addrInput">🏠 주소 선택
   </label>
-  <input id="addrInput" type="text" placeholder="저장된 주소 선택하기(업로드 / 복붙" onfocus="this.value=''; showDropdown();" oninput="showDropdown()" onclick="showDropdown()">
+  <input id="addrInput" type="text" placeholder="저장된 주소 선택하기(업로드/복사+붙여넣기" onfocus="this.value=''; showDropdown();" oninput="showDropdown()" onclick="showDropdown()">
 </div>
 
   <div class="card-ui">
