@@ -173,13 +173,14 @@
     <option value="google">구글지도</option>
   </select>
 </div>    
-
-   <div class="card-ui">
-  <label for="addrInput">🏠 주소 선택
-  </label>
-  <input id="addrInput" type="text" placeholder="저장된 주소 선택하기(업로드/복사+붙여넣기)" onfocus="this.value=''; showDropdown();" oninput="showDropdown()" onclick="showDropdown()">
+<div class="card-ui">
+  <label for="addrInput">🏠 주소 선택</label>
+  <input id="addrInput" type="text" placeholder="저장된 주소 선택하기(업로드/복사+붙여넣기)" 
+         onfocus="this.value=''; showDropdown();" 
+         oninput="showDropdown()" onclick="showDropdown()">
+  <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 </div>
-
+ 
   <div class="card-ui">
   <label for="statusSelect">📝 출장 상태 선택
   </label>
