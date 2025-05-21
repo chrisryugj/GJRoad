@@ -244,6 +244,12 @@ let viewedAddresses = new Set();
 let preferredMap = localStorage.getItem("preferredMap") || "naver";
 
 document.addEventListener("DOMContentLoaded", function() {
+  // 상태맵, 지도앱은 이미 복원 중
+  const savedList = localStorage.getItem("addressList");
+  if (savedList) {
+    주소목록 = JSON.parse(savedList);
+  }
+
   document.getElementById("mapSelect").value = preferredMap;
   document.querySelectorAll(".tab-btn").forEach(button => {
     button.addEventListener("click", function(e) {
@@ -251,8 +257,10 @@ document.addEventListener("DOMContentLoaded", function() {
       showTab(tabId, e);
     });
   });
+
   showTab("manage");
 });
+
 
 function showTab(tabId, event = null) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -322,6 +330,10 @@ function handleStatusChange() {
     saveStatus();
   }
 }
+  function saveAddressList() {
+  localStorage.setItem("addressList", JSON.stringify(주소목록));
+}
+
 
 function saveStatus() {
   const select = document.getElementById("statusSelect");
@@ -359,6 +371,7 @@ function loadAddressFile(event) {
     alert(`주소 파일 업로드 완료: ${lines.length}건 중 ${added}건 추가됨 (총 ${주소목록.length}건)`);
   };
   reader.readAsText(file, 'UTF-8');
+  saveAddressList();
 }
 
 function addFromTextarea() {
@@ -367,6 +380,7 @@ function addFromTextarea() {
   const lines = input.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const newList = lines.filter(l => !주소목록.includes(l));
   주소목록 = [...주소목록, ...newList];
+  saveAddressList();
   alert(`${newList.length}개의 주소가 추가되었습니다.`);
   document.getElementById("bulkPaste").value = "";
 }
@@ -376,6 +390,7 @@ function resetAddressList() {
   currentAddress = null;
   document.getElementById("addrInput").value = "";
   document.getElementById("customDropdown").innerHTML = "";
+  saveAddressList();
   alert("주소 목록이 초기화되었습니다.");
 }
 
