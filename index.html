@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>진출로 – 출장길 도우미</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f7f9fc;
+      margin: 0;
+      padding: 10px;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    header > div {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    header img {
+      height: 34px;
+      cursor: pointer;
+    }
+    header span {
+      color: #1b3c82;
+    }
+    header .sub {
+      color: #555;
+    }
+    #bannerImage {
+      width: 100%;
+      max-width: 100%;
+      display: none;
+      margin-top: 8px;
+      border-radius: 8px;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .tabs button {
+      flex: 1 1 auto;
+      padding: 8px;
+      margin: 2px;
+      font-size: 0.9rem;
+      border: none;
+      background-color: #ccc;
+      color: #000;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      background-color: #1b3c82;
+      color: #fff;
+    }
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .card-ui {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    input[type="text"], input[type="file"], select, button, textarea {
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    #customStatusInput {
+      background-color: #fff8dc;
+      border-color: #f0c36d;
+    }
+    textarea {
+      resize: vertical;
+      height: 100px;
+    }
+    .dropdown-item {
+      padding: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .dropdown-item.viewed {
+      background-color: #e0f7fa;
+    }
+    .status-marked {
+      font-weight: bold;
+    }
+    canvas {
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+      display: block;
+      margin: 10px auto;
+    }
+    #chartTextOutput {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    tr.status-출장완료 { background-color: #e8f5e9; }
+    tr.status-미출장 { background-color: #ffebee; }
+    tr.status-미선택 { background-color: #eceff1; }
+    footer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 12px;
+      margin-top: 30px;
+      font-size: 0.8rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <img src="https://www.gwangjin.go.kr/editorUpload/images/000196/20221007110449234_IXETSNKL.png"
+         alt="광진구 CI"
+         onclick="showTab('manage', event)">
+    <div style="font-size: 1.9rem; font-weight: bold;">
+      <span style="color: #1b3c82;">진출로 (進出路)</span><span style="color: #555;">: 출장길 도우미</span>
+    </div>
+  </div>
+  <img id="bannerImage" src="" alt="배너 이미지">
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="manage">주소 관리</button>
+  <button class="tab-btn" data-tab="table">전체 목록</button>
+  <button class="tab-btn" data-tab="stats">통계 보기</button>
+</div>
+
+<div id="tab-manage" class="tab-content active">
+  <div class="card-ui">
+    <label for="mapSelect">지도 앱 선택</label>
+    <select id="mapSelect" onchange="saveMapPreference()">
+      <option value="naver">네이버지도</option>
+      <option value="kakao">카카오맵</option>
+      <option value="google">구글지도</option>
+    </select>
+
+    <input id="addrInput" type="text" placeholder="주소 선택..." onfocus="this.value=''; showDropdown();" oninput="showDropdown()" onclick="showDropdown()">
+    <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
+
+    <select id="statusSelect" onchange="handleStatusChange()">
+      <option value="">미선택</option>
+      <option value="출장완료">출장완료</option>
+      <option value="미출장">미출장</option>
+      <option value="직접입력">직접입력 (아래 입력)</option>
+    </select>
+    <input id="customStatusInput" type="text" maxlength="50" placeholder="상태 직접 입력 (50자 이내)" style="display:none;" oninput="saveStatus()">
+  </div>
+
+  <div class="card-ui">
+    <input id="fileUpload" type="file" accept=".txt,.csv" onchange="loadAddressFile(event)">
+  </div>
+
+  <div class="card-ui">
+    <textarea id="bulkPaste" placeholder="주소를 줄 단위로 복사해 붙여넣어 주세요."></textarea>
+    <button onclick="addFromTextarea()">📋 주소 복붙 추가</button>
+  </div>
+
+  <div class="card-ui" style="display: flex; gap: 10px;">
+    <button onclick="resetAddressList()">📂 주소 초기화</button>
+    <button onclick="resetStatusMap()">🧹 상태 초기화</button>
+  </div>
+</div>
+
+<div id="tab-table" class="tab-content">
+  <div class="card-ui">
+    <div id="tableSummary">총 0건</div>
+    <button onclick="copyTable()">📄 복사하기</button>
+    <button onclick="exportText()">📁 파일 다운로드</button>
+    <table style="width:100%; font-size:0.9rem;">
+      <thead><tr><th>주소</th><th>상태</th></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="tab-stats" class="tab-content">
+  <div class="card-ui">
+    <div id="statsCount" style="text-align:center; font-weight:bold; margin-bottom:10px;"></div>
+    <canvas id="statusChart" width="400" height="300"></canvas>
+    <div id="chartTextOutput"></div>
+  </div>
+</div>
+
+<footer>
+  (c) 2025 광진구청 가로경관과 개친절한 류주임
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let 주소목록 = [];
+let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
+let currentAddress = null;
+let viewedAddresses = new Set();
+let preferredMap = localStorage.getItem("preferredMap") || "naver";
+
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("mapSelect").value = preferredMap;
+  document.querySelectorAll(".tab-btn").forEach(button => {
+    button.addEventListener("click", function(e) {
+      const tabId = this.getAttribute("data-tab");
+      showTab(tabId, e);
+    });
+  });
+  showTab("manage");
+});
+
+function showTab(tabId, event = null) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  if (event) event.target.classList.add('active');
+  else document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+  if (tabId === "table") updateTable();
+  if (tabId === "stats") drawChart();
+}
+
+function saveMapPreference() {
+  preferredMap = document.getElementById("mapSelect").value;
+  localStorage.setItem("preferredMap", preferredMap);
+}
+
+function showDropdown() {
+  const input = document.getElementById("addrInput");
+  const dropdown = document.getElementById("customDropdown");
+  dropdown.innerHTML = "";
+  dropdown.style.display = "block";
+  주소목록.filter(addr => addr.includes(input.value)).forEach(addr => {
+    const div = document.createElement("div");
+    div.className = "dropdown-item";
+    if (viewedAddresses.has(addr)) div.classList.add("viewed");
+    if (statusMap[addr]) div.classList.add("status-marked");
+    div.textContent = statusMap[addr] ? addr + " [" + statusMap[addr] + "]" : addr;
+    div.onclick = () => {
+      currentAddress = addr;
+      viewedAddresses.add(addr);
+      input.value = addr;
+      document.getElementById("statusSelect").value = statusMap[addr] || "";
+      const customInput = document.getElementById("customStatusInput");
+      const value = statusMap[addr] || "";
+      if (!["출장완료", "미출장", ""].includes(value)) {
+        document.getElementById("statusSelect").value = "직접입력";
+        customInput.style.display = "block";
+        customInput.value = value;
+      } else {
+        customInput.style.display = "none";
+        customInput.value = "";
+      }
+      dropdown.style.display = "none";
+      openMapInNewTab();
+    };
+    dropdown.appendChild(div);
+  });
+}
+
+function openMapInNewTab() {
+  const addr = currentAddress || document.getElementById("addrInput").value.trim();
+  if (!addr) return alert("주소를 입력하세요.");
+  const encodedAddr = encodeURIComponent(addr.replace(/\s*\([^)]*\)\s*$/, '').trim());
+  let url = "";
+  if (preferredMap === "naver") url = `https://map.naver.com/v5/search/${encodedAddr}`;
+  else if (preferredMap === "kakao") url = `https://map.kakao.com/?q=${encodedAddr}`;
+  else if (preferredMap === "google") url = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
+  window.open(url, '_blank');
+}
+function handleStatusChange() {
+  const select = document.getElementById("statusSelect");
+  const customInput = document.getElementById("customStatusInput");
+  if (select.value === "직접입력") {
+    customInput.style.display = "block";
+  } else {
+    customInput.style.display = "none";
+    saveStatus();
+  }
+}
+
+function saveStatus() {
+  const select = document.getElementById("statusSelect");
+  const input = document.getElementById("customStatusInput");
+  let status = select.value;
+  if (status === "직접입력") {
+    status = input.value.trim().substring(0, 50);
+  }
+  if (!currentAddress) return;
+  if (!status) delete statusMap[currentAddress];
+  else statusMap[currentAddress] = status;
+  localStorage.setItem("statusMap", JSON.stringify(statusMap));
+}
+
+function loadAddressFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split(/\r?\n/).filter(line => line.trim());
+    const newList = [];
+    let added = 0;
+    lines.forEach(line => {
+      const [addr, status] = line.split('\t');
+      const trimmedAddr = addr?.trim();
+      if (trimmedAddr && !주소목록.includes(trimmedAddr)) {
+        newList.push(trimmedAddr);
+        if (status) statusMap[trimmedAddr] = status.trim();
+        added++;
+      } else if (trimmedAddr && status) {
+        statusMap[trimmedAddr] = status.trim();
+      }
+    });
+    주소목록 = [...주소목록, ...newList];
+    alert(`주소 파일 업로드 완료: ${lines.length}건 중 ${added}건 추가됨 (총 ${주소목록.length}건)`);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function addFromTextarea() {
+  const input = document.getElementById("bulkPaste").value;
+  if (!input) return;
+  const lines = input.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const newList = lines.filter(l => !주소목록.includes(l));
+  주소목록 = [...주소목록, ...newList];
+  alert(`${newList.length}개의 주소가 추가되었습니다.`);
+  document.getElementById("bulkPaste").value = "";
+}
+
+function resetAddressList() {
+  주소목록 = [];
+  currentAddress = null;
+  document.getElementById("addrInput").value = "";
+  document.getElementById("customDropdown").innerHTML = "";
+  alert("주소 목록이 초기화되었습니다.");
+}
+
+function resetStatusMap() {
+  statusMap = {};
+  localStorage.removeItem("statusMap");
+  alert("상태 정보가 초기화되었습니다.");
+}
+
+function updateTable() {
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || "미선택";
+    const row = document.createElement("tr");
+    row.className = `status-${status}`;
+    row.innerHTML = `<td>${addr}</td><td>${status}</td>`;
+    tbody.appendChild(row);
+  });
+  document.getElementById("tableSummary").innerText = "총 " + 주소목록.length + "건";
+}
+
+function copyTable() {
+  let text = "주소\t상태\n";
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || "미선택";
+    text += addr + "\t" + status + "\n";
+  });
+  navigator.clipboard.writeText(text).then(() => alert("복사 완료"));
+}
+
+function exportText() {
+  let text = "주소\t상태\n";
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || "미선택";
+    text += addr + "\t" + status + "\n";
+  });
+  const blob = new Blob([text], { type: 'text/plain' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "출장기록.txt";
+  link.click();
+}
+
+function drawChart() {
+  const ctx = document.getElementById("statusChart").getContext("2d");
+  const count = { 출장완료: 0, 미출장: 0, 미선택: 0, 직접입력: 0 };
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || "미선택";
+    const key = ["출장완료", "미출장", "미선택"].includes(status) ? status : "직접입력";
+    count[key]++;
+  });
+  const data = {
+    labels: Object.keys(count),
+    datasets: [{
+      label: '상태별 개수',
+      data: Object.values(count),
+      backgroundColor: ['#4caf50', '#f44336', '#90a4ae', '#ffcc80']
+    }]
+  };
+  if (window.myChart) window.myChart.destroy();
+  window.myChart = new Chart(ctx, {
+    type: 'bar',
+    data: data,
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+  const total = Object.values(count).reduce((a, b) => a + b, 0);
+  document.getElementById("statsCount").innerText = `총 항목 수: ${total}건`;
+  document.getElementById("chartTextOutput").innerText =
+    Object.entries(count).map(([k,v]) => `${k}: ${v}건`).join(' / ');
+}
+</script>
+</body>
+</html>
