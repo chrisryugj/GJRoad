@@ -173,6 +173,10 @@ tr.status-직접입력 {
     <option value="kakao">카카오맵</option>
     <option value="google">구글지도</option>
   </select>
+   <label for="useAppToggle" style="margin-top: 5px; display: block; font-size: 0.9rem;">
+    <input type="checkbox" id="useAppToggle" checked>
+    📱 앱에서 열기 (지도앱 설치 시)
+  </label>
 </div>    
 <div class="card-ui">
   <label for="addrInput">🏠 주소 선택</label>
@@ -250,6 +254,18 @@ let currentAddress = null;
 let viewedAddresses = new Set();
 let preferredMap = localStorage.getItem("preferredMap") || "naver";
   let memoMode = localStorage.getItem("memoMode") === "true";
+  let useAppDefault = localStorage.getItem("useApp") !== "false";
+
+document.addEventListener("DOMContentLoaded", () => {
+  const appToggle = document.getElementById("useAppToggle");
+  if (appToggle) {
+    appToggle.checked = useAppDefault;
+    appToggle.addEventListener("change", () => {
+      localStorage.setItem("useApp", appToggle.checked);
+    });
+  }
+});
+
 
 function saveMemoMode() {
   memoMode = document.getElementById("memoModeToggle").checked;
@@ -347,13 +363,45 @@ function showDropdown() {
 function openMapInNewTab() {
   const addr = currentAddress || document.getElementById("addrInput").value.trim();
   if (!addr) return alert("주소를 입력하세요.");
-  const encodedAddr = encodeURIComponent(addr.replace(/\s*\([^)]*\)\s*$/, '').trim());
-  let url = "";
-  if (preferredMap === "naver") url = `https://map.naver.com/v5/search/${encodedAddr}`;
-  else if (preferredMap === "kakao") url = `https://map.kakao.com/?q=${encodedAddr}`;
-  else if (preferredMap === "google") url = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
-  window.open(url, '_blank');
+
+  const baseAddr = addr.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  const encodedAddr = encodeURIComponent(baseAddr);
+  const mapType = preferredMap; // "naver", "kakao", "google"
+  const useApp = document.getElementById("useAppToggle")?.checked;
+
+  const ua = navigator.userAgent.toLowerCase();
+  const isAndroid = ua.includes("android");
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+  const isMobile = isAndroid || isIOS;
+
+  let appUrl = "";
+  let webUrl = "";
+
+  if (mapType === "naver") {
+    appUrl = isIOS ? `nmap://search?query=${encodedAddr}` : `intent://search?query=${encodedAddr}#Intent;scheme=nmap;package=com.nhn.android.nmap;end`;
+    webUrl = `https://map.naver.com/v5/search/${encodedAddr}`;
+  } else if (mapType === "kakao") {
+    appUrl = `kakaomap://search?q=${encodedAddr}`;
+    webUrl = `https://map.kakao.com/?q=${encodedAddr}`;
+  } else if (mapType === "google") {
+    appUrl = isIOS ? `comgooglemaps://?q=${encodedAddr}` : `geo:0,0?q=${encodedAddr}`;
+    webUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
+  }
+
+  // 앱 열기 우선 시도
+  if (useApp && isMobile) {
+    location.href = appUrl;
+
+    // fallback to web after timeout (e.g. 앱 미설치)
+    setTimeout(() => {
+      location.href = webUrl;
+    }, 2000); // 앱 없으면 2초 후 웹으로
+  } else {
+    // 그냥 웹으로 새창
+    window.open(webUrl, "_blank");
+  }
 }
+
 function handleStatusChange() {
   const select = document.getElementById("statusSelect");
   const customInput = document.getElementById("customStatusInput");
