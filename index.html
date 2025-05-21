@@ -179,7 +179,7 @@
       <option value="미출장">미출장</option>
       <option value="직접입력">직접입력 (아래 입력)</option>
     </select>
-    <input id="customStatusInput" type="text" maxlength="50" placeholder="상태 직접 입력 (50자 이내)" style="display:none;" oninput="saveStatus()">
+    <input id="customStatusInput" type="text" maxlength="100" placeholder="상태 직접 입력 (100자 이내)" style="display:none;" oninput="saveStatus()">
   </div>
 
   <div class="card-ui">
@@ -314,7 +314,7 @@ function saveStatus() {
   const input = document.getElementById("customStatusInput");
   let status = select.value;
   if (status === "직접입력") {
-    status = input.value.trim().substring(0, 50);
+    status = input.value.trim().substring(0, 100);
   }
   if (!currentAddress) return;
   if (!status) delete statusMap[currentAddress];
