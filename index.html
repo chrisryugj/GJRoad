@@ -348,6 +348,9 @@ function saveStatus() {
   else statusMap[currentAddress] = status;
   localStorage.setItem("statusMap", JSON.stringify(statusMap));
 }
+function saveViewedAddresses() {
+  localStorage.setItem("viewedAddresses", JSON.stringify([...viewedAddresses]));
+}
 
 function loadAddressFile(event) {
   const file = event.target.files[0];
