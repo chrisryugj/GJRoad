@@ -163,24 +163,32 @@
 
 <div id="tab-manage" class="tab-content active">
   <div class="card-ui">
-    <label for="mapSelect">지도 앱 선택</label>
+    <label for="mapSelect">🗺️ 지도 앱 선택</label>
     <select id="mapSelect" onchange="saveMapPreference()">
       <option value="naver">네이버지도</option>
       <option value="kakao">카카오맵</option>
       <option value="google">구글지도</option>
     </select>
 
-    <input id="addrInput" type="text" placeholder="주소 선택..." onfocus="this.value=''; showDropdown();" oninput="showDropdown()" onclick="showDropdown()">
-    <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
+   <div class="card-ui">
+  <label for="addrInput">
+    🏠 주소 선택
+  </label>
+  <input id="addrInput" type="text" placeholder="저장된 주소 선택하기(업로드 or 복붙" onfocus="this.value=''; showDropdown();" oninput="showDropdown()" onclick="showDropdown()">
+</div>
 
-    <select id="statusSelect" onchange="handleStatusChange()">
-      <option value="" disabled selected hidden>메모 남기기</option>
-      <option value="출장완료">출장완료</option>
-      <option value="미출장">미출장</option>
-      <option value="직접입력">직접입력 (아래 입력)</option>
-    </select>
-    <input id="customStatusInput" type="text" maxlength="100" placeholder="상태 직접 입력 (100자 이내)" style="display:none;" oninput="saveStatus()">
-  </div>
+  <div class="card-ui">
+  <label for="statusSelect">
+    📝 출장 상태 선택
+  </label>
+  <select id="statusSelect" onchange="handleStatusChange()">
+    <option value="" disabled selected hidden>메모 남기기</option>
+    <option value="출장완료">출장완료</option>
+    <option value="미출장">미출장</option>
+    <option value="직접입력">직접입력 (아래 입력)</option>
+  </select>
+  <input id="customStatusInput" type="text" maxlength="100" placeholder="상태 직접 입력 (100자 이내)" style="display:none;" oninput="saveStatus()">
+</div>
 
   <div class="card-ui">
     <input id="fileUpload" type="file" accept=".txt,.csv" onchange="loadAddressFile(event)">
