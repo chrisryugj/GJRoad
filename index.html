@@ -167,7 +167,7 @@ tr.status-직접입력 {
 
 
 <div class="card-ui">
-  <label for="mapSelect">🗺️ 지도 앱 선택</label>
+  <label for="mapSelect" style="font-weight: bold;">🗺️ 지도 앱 선택</label>
   <select id="mapSelect" onchange="saveMapPreference()">
     <option value="naver">네이버지도</option>
     <option value="kakao">카카오맵</option>
@@ -179,7 +179,7 @@ tr.status-직접입력 {
   </label>
 </div>    
 <div class="card-ui">
-  <label for="addrInput">🏠 주소 선택</label>
+  <label for="addrInput" style="font-weight: bold;">🏠 주소 선택</label>
   <input id="addrInput" type="text" placeholder="저장된 주소 선택하기(업로드/복사+붙여넣기)" 
          onfocus="this.value=''; showDropdown();" 
          oninput="showDropdown()" onclick="showDropdown()">
@@ -206,12 +206,12 @@ tr.status-직접입력 {
 
 <hr style="border: none; height: 4px; background-color: #ccc; margin: 0 0 15px 0;">
 <div class="card-ui">
-  <label for="fileUpload">📁 주소 파일 업로드</label>
+  <label for="fileUpload" style="font-weight: bold;">📁 주소 파일 업로드</label>
   <input id="fileUpload" type="file" accept=".txt,.csv" onchange="loadAddressFile(event)">
 </div>
 
   <div class="card-ui">
-    <label for="bulkPaste">📋 주소 복사해서 입력</label>
+    <label for="bulkPaste" style="font-weight: bold;">📋 주소 복사해서 입력</label>
     <textarea id="bulkPaste" placeholder="주소를 줄 단위로 복사해 붙여넣고 밑에 저장버튼 클릭"></textarea>
     <button onclick="addFromTextarea()">📋 붙여넣은 주소 저장</button>
   </div>
