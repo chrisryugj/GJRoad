@@ -384,19 +384,19 @@ function openMapInNewTab() {
 
   const baseAddr = addr.replace(/\s*\([^)]*\)\s*$/, '').trim();
   const encodedAddr = encodeURIComponent(baseAddr);
-  const mapType = preferredMap; // "naver", "kakao", "google"
+  const mapType = preferredMap;
   const useApp = document.getElementById("useAppToggle")?.checked;
-
   const ua = navigator.userAgent.toLowerCase();
   const isAndroid = ua.includes("android");
   const isIOS = /iphone|ipad|ipod/.test(ua);
-  const isMobile = isAndroid || isIOS;
 
   let appUrl = "";
   let webUrl = "";
 
   if (mapType === "naver") {
-    appUrl = isIOS ? `nmap://search?query=${encodedAddr}` : `intent://search?query=${encodedAddr}#Intent;scheme=nmap;package=com.nhn.android.nmap;end`;
+    appUrl = isIOS
+      ? `nmap://search?query=${encodedAddr}`
+      : `intent://search?query=${encodedAddr}#Intent;scheme=nmap;package=com.nhn.android.nmap;end`;
     webUrl = `https://map.naver.com/v5/search/${encodedAddr}`;
   } else if (mapType === "kakao") {
     appUrl = `kakaomap://search?q=${encodedAddr}`;
@@ -406,19 +406,23 @@ function openMapInNewTab() {
     webUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
   }
 
-  // 앱 열기 우선 시도
-  if (useApp && isMobile) {
-    location.href = appUrl;
+  // ✅ iOS는 앱 체크박스와 상관없이 무조건 새창으로 웹 연결
+  if (isIOS) {
+    window.open(webUrl, "_blank");
+    return;
+  }
 
-    // fallback to web after timeout (e.g. 앱 미설치)
+  // ✅ Android에서는 "앱으로 열기" 체크 여부에 따라 처리
+  if (useApp && isAndroid) {
+    location.href = appUrl;
     setTimeout(() => {
       location.href = webUrl;
-    }, 2000); // 앱 없으면 2초 후 웹으로
+    }, 2000); // 앱 없을 경우 fallback
   } else {
-    // 그냥 웹으로 새창
     window.open(webUrl, "_blank");
   }
 }
+
 
 function handleStatusChange() {
   const select = document.getElementById("statusSelect");
