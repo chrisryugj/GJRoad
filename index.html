@@ -260,15 +260,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const appToggle = document.getElementById("useAppToggle");
 
   if (isIOS() && appToggle) {
-    appToggle.checked = false;
-    appToggle.disabled = true;
-    
+    appToggle.removeAttribute("checked");      // ✅ HTML 속성 제거
+    appToggle.checked = false;                 // ✅ 상태 false로 설정
+    appToggle.disabled = true;                 // ✅ 비활성화
 
-    // 안내 문구 또는 스타일 보정 (선택)
     const label = document.querySelector("label[for='useAppToggle']");
     if (label) {
       label.innerHTML += ' <span style="color:gray; font-size:0.85rem;">(iOS에서는 미지원)</span>';
     }
+  } else if (appToggle) {
+    // iOS가 아닐 경우, 저장된 값 복원
+    const useAppStored = localStorage.getItem("useApp");
+    if (useAppStored !== null) {
+      appToggle.checked = useAppStored === "true";
+    }
+    appToggle.addEventListener("change", () => {
+      localStorage.setItem("useApp", appToggle.checked);
+    });
   }
 });
 
