@@ -260,8 +260,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const appToggle = document.getElementById("useAppToggle");
 
   if (isIOS() && appToggle) {
-    appToggle.disabled = true;
     appToggle.checked = false;
+    appToggle.disabled = true;
+    
 
     // 안내 문구 또는 스타일 보정 (선택)
     const label = document.querySelector("label[for='useAppToggle']");
