@@ -173,10 +173,7 @@ tr.status-직접입력 {
     <option value="kakao">카카오맵</option>
     <option value="google">구글지도</option>
   </select>
-   <label for="useAppToggle" style="margin-top: 5px; display: block; font-size: 0.9rem;">
-    <input type="checkbox" id="useAppToggle" checked>
-    📱 지도앱으로 열기
-  </label>
+
 </div>    
 <div class="card-ui">
   <label for="addrInput" style="font-weight: bold;">🏠 주소 선택</label>
@@ -256,38 +253,6 @@ let preferredMap = localStorage.getItem("preferredMap") || "naver";
   let memoMode = localStorage.getItem("memoMode") === "true";
   let useAppDefault = localStorage.getItem("useApp") !== "false";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const appToggle = document.getElementById("useAppToggle");
-  const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-  if (!isMobile && appToggle) {
-    // PC에서는 체크박스 비활성화
-    appToggle.checked = false;
-    appToggle.disabled = true;
-    const label = document.querySelector("label[for='useAppToggle']");
-    if (label) {
-      label.innerHTML += ' <span style="color:gray; font-size:0.85rem;">(PC에서는 미지원)</span>';
-    }
-  } else if (isIOS && appToggle) {
-    // iOS에서도 비활성화 (중복 안전 처리)
-    appToggle.checked = false;
-    appToggle.disabled = true;
-    const label = document.querySelector("label[for='useAppToggle']");
-    if (label) {
-      label.innerHTML += ' <span style="color:gray; font-size:0.85rem;">(iOS에서는 미지원)</span>';
-    }
-  } else if (appToggle) {
-    // 안드로이드 모바일만 정상 작동
-    const useAppStored = localStorage.getItem("useApp");
-    if (useAppStored !== null) {
-      appToggle.checked = useAppStored === "true";
-    }
-    appToggle.addEventListener("change", () => {
-      localStorage.setItem("useApp", appToggle.checked);
-    });
-  }
-});
 
 
   function isIOS() {
@@ -395,42 +360,17 @@ function openMapInNewTab() {
   const baseAddr = addr.replace(/\s*\([^)]*\)\s*$/, '').trim();
   const encodedAddr = encodeURIComponent(baseAddr);
   const mapType = preferredMap;
-  const useApp = document.getElementById("useAppToggle")?.checked;
-  const ua = navigator.userAgent.toLowerCase();
-  const isAndroid = ua.includes("android");
-  const isIOS = /iphone|ipad|ipod/.test(ua);
 
-  let appUrl = "";
-  let webUrl = "";
-
+  let url = "";
   if (mapType === "naver") {
-    appUrl = isIOS
-      ? `nmap://search?query=${encodedAddr}`
-      : `intent://search?query=${encodedAddr}#Intent;scheme=nmap;package=com.nhn.android.nmap;end`;
-    webUrl = `https://map.naver.com/v5/search/${encodedAddr}`;
+    url = `https://map.naver.com/v5/search/${encodedAddr}`;
   } else if (mapType === "kakao") {
-    appUrl = `kakaomap://search?q=${encodedAddr}`;
-    webUrl = `https://map.kakao.com/?q=${encodedAddr}`;
+    url = `https://map.kakao.com/?q=${encodedAddr}`;
   } else if (mapType === "google") {
-    appUrl = isIOS ? `comgooglemaps://?q=${encodedAddr}` : `geo:0,0?q=${encodedAddr}`;
-    webUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
+    url = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
   }
 
-  // ✅ iOS는 앱 체크박스와 상관없이 무조건 새창으로 웹 연결
-  if (isIOS) {
-    window.open(webUrl, "_blank");
-    return;
-  }
-
-  // ✅ Android에서는 "앱으로 열기" 체크 여부에 따라 처리
-  if (useApp && isAndroid) {
-    location.href = appUrl;
-    setTimeout(() => {
-      location.href = webUrl;
-    }, 2000); // 앱 없을 경우 fallback
-  } else {
-    window.open(webUrl, "_blank");
-  }
+  window.open(url, "_blank"); // 브라우저에서 새창으로 열기 (앱 연동은 시스템이 처리)
 }
 
 
