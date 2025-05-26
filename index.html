@@ -175,7 +175,7 @@ tr.status-직접입력 {
   </select>
    <label for="useAppToggle" style="margin-top: 5px; display: block; font-size: 0.9rem;">
     <input type="checkbox" id="useAppToggle" checked>
-    📱 앱에서 열기 (지도앱 설치 시)
+    📱 지도앱으로 열기
   </label>
 </div>    
 <div class="card-ui">
@@ -266,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 안내 문구 또는 스타일 보정 (선택)
     const label = document.querySelector("label[for='useAppToggle']");
     if (label) {
-      label.innerHTML += ' <span style="color:gray; font-size:0.85rem;">(iOS에서는 지원되지 않음)</span>';
+      label.innerHTML += ' <span style="color:gray; font-size:0.85rem;">(iOS에서는 미지원)</span>';
     }
   }
 });
