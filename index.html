@@ -258,13 +258,22 @@ let preferredMap = localStorage.getItem("preferredMap") || "naver";
 
 document.addEventListener("DOMContentLoaded", () => {
   const appToggle = document.getElementById("useAppToggle");
-  if (appToggle) {
-    appToggle.checked = useAppDefault;
-    appToggle.addEventListener("change", () => {
-      localStorage.setItem("useApp", appToggle.checked);
-    });
+
+  if (isIOS() && appToggle) {
+    appToggle.disabled = true;
+    appToggle.checked = false;
+
+    // 안내 문구 또는 스타일 보정 (선택)
+    const label = document.querySelector("label[for='useAppToggle']");
+    if (label) {
+      label.innerHTML += ' <span style="color:gray; font-size:0.85rem;">(iOS에서는 지원되지 않음)</span>';
+    }
   }
 });
+
+  function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
 
 
 function saveMemoMode() {
