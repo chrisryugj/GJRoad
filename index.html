@@ -177,9 +177,18 @@ tr.status-직접입력 {
 </div>    
 <div class="card-ui">
   <label for="addrInput" style="font-weight: bold;">🏠 주소 선택</label>
-  <input id="addrInput" type="text" placeholder="저장된 주소 선택하기(업로드/복사+붙여넣기)" 
-         onfocus="this.value=''; showDropdown();" 
-         oninput="showDropdown()" onclick="showDropdown()">
+  <input
+  id="addrInput"
+  name="no_autofill"
+  type="text"
+  placeholder="저장된 주소 선택하기(업로드/복사+붙여넣기)"
+  autocomplete="off"
+  autocorrect="off"
+  spellcheck="false"
+  onfocus="this.value=''; showDropdown();"
+  oninput="showDropdown()"
+  onclick="showDropdown()"
+/>
   <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 </div>
  
