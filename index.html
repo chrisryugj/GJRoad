@@ -623,7 +623,8 @@ function showDropdown() {
   });
 }
   
-function openMapInNewTab() {
+
+  function openMapInNewTab() {
   const addr = currentAddress || document.getElementById("addrInput").value.trim();
   if (!addr) return alert("주소를 입력하세요.");
 
@@ -639,10 +640,10 @@ function openMapInNewTab() {
   } else if (mapType === "google") {
     url = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
   }
-  if (typeof memoMode !== 'undefined' && !memoMode) {
-  openMapInNewTab();
-}
-  window.open(url, "_blank"); // 브라우저에서 새창으로 열기 (앱 연동은 시스템이 처리)
+
+  // ❌ 잘못된 무한 재귀 호출 제거
+  // ✅ 필요시 조건부 openMapInNewTab 호출은 외부에서 제어하도록
+  window.open(url, "_blank");
 }
 
 
