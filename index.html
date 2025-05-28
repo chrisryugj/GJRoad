@@ -354,13 +354,16 @@ function renderPhotos() {
   if (!container) return;
   container.innerHTML = "";
   const photos = Array.isArray(photoMap[currentAddress]) ? photoMap[currentAddress] : [];
+  if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = photoMap[currentAddress];
   photos.forEach((url, i) => {
     const img = document.createElement("img");
     img.src = url;
     img.className = "photo-preview";
+    img.setAttribute("data-index", i);
     img.onclick = () => handlePhotoClick(i);
     container.appendChild(img);
   });
+});
 }
   
 function exportText() {
@@ -369,9 +372,9 @@ function exportText() {
   주소목록.forEach(addr => {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
-    const photoLinks = (Array.isArray(photoMap[addr]) ? photoMap[addr] : [])
-      .map((url, i) => `사진${i + 1}: ${url}`) // 엑셀 셀 텍스트 길이 초과 방지
-      .join("; ");
+    const photoLinks = (Array.isArray(photoMap[addr]) ? photoMap[addr].slice(0, 5) : [])
+  .map((url, i) => `사진${i + 1}: ${url}`)
+  .join("; ");
     const limitedMemo = memo.length > 10000 ? memo.slice(0, 10000) + "..." : memo;
     data.push([addr, status, limitedMemo, photoLinks]);
   });
