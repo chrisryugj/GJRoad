@@ -308,6 +308,8 @@ function deletePhoto() {
 }
   
 function handlePhotoClick() {
+  const imgUrl = photoMap[currentAddress];
+  if (!imgUrl) return;
   const dialog = document.createElement("div");
   dialog.style.position = "fixed";
   dialog.style.top = "50%";
@@ -329,9 +331,8 @@ function handlePhotoClick() {
   document.body.appendChild(dialog);
 
   document.getElementById("viewBtn").onclick = () => {
-    const src = document.getElementById("photoPreview").src;
     const popup = window.open("", "_blank");
-    popup.document.write(`<img src='${src}' style='max-width:100%;'>`);
+    popup.document.write(`<img src='${imgUrl}' style='max-width:100%; height:auto;'>`);
     document.body.removeChild(dialog);
   };
 
@@ -424,14 +425,14 @@ function resizeImage(base64, maxWidth, maxHeight, callback) {
     const canvas = document.createElement("canvas");
     let width = img.width;
     let height = img.height;
-    const ratio = Math.min(300 / width, 300 / height, 1);
+    const ratio = Math.min(1024 / width, 1024 / height, 1);
     width = width * ratio;
     height = height * ratio;
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, width, height);
-    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.5);
+    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.85);
     callback(resizedBase64);
   };
   img.src = base64;
@@ -465,6 +466,7 @@ function uploadToImgur(base64Image, callback) {
 }
 
 
+
 function savePhoto() {
   const fileInput = document.getElementById("photoInput");
   const file = fileInput.files[0];
@@ -472,7 +474,7 @@ function savePhoto() {
 
   const reader = new FileReader();
   reader.onload = function(e) {
-    resizeImage(e.target.result, 800, 800, function(resizedBase64) {
+    resizeImage(e.target.result, 1024, 1024, function(resizedBase64) {
       uploadToImgur(resizedBase64, function(imgurUrl) {
         photoMap[currentAddress] = imgurUrl;
         localStorage.setItem("photoMap", JSON.stringify(photoMap));
@@ -485,6 +487,7 @@ function savePhoto() {
   };
   reader.readAsDataURL(file);
 }
+
 
 
 function showDropdown() {
