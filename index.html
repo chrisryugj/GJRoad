@@ -292,6 +292,7 @@ tr.status-직접입력 {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+  const originalPhotoMap = {};
 let memoMode = localStorage.getItem("memoMode") === "true";
 let preferredMap = localStorage.getItem("preferredMap") || "naver";
 let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
