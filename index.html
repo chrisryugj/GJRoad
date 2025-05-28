@@ -17,6 +17,12 @@
     border-radius: 6px;
     border: 1px solid #ccc;
   }
+    .photo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
       #customDropdown {
     position: absolute;
     z-index: 1000;
@@ -211,10 +217,9 @@ tr.status-직접입력 {
   <label for="memoInput" style="font-weight: bold;">📝 현장 메모</label>
   <textarea id="memoInput" placeholder="현장 특이사항이나 참고 메모를 남기세요."></textarea>
 
-  <label for="photoInput" style="font-weight: bold;">📸 현장 사진</label>
+  <label style="font-weight: bold;">📸 현장 사진 (최대 5장)</label>
   <input type="file" id="photoInput" accept="image/*" onchange="savePhoto()">
-  <img id="photoPreview" class="photo-preview" style="display:none; cursor:pointer;" onclick="handlePhotoClick()">
-<button onclick="deletePhoto()" style="margin-top:5px; display:none;" id="deletePhotoBtn">❌ 사진 삭제</button>
+  <div id="photoContainer" class="photo-grid"></div>
 
   <button onclick="saveMemo()">💾 저장</button>
 </div>
@@ -296,19 +301,16 @@ let currentAddress = null;
 let viewedAddresses = new Set();
 let useAppDefault = localStorage.getItem("useApp") !== "false";
   
-function deletePhoto() {
+function deletePhoto(index) {
   if (!currentAddress) return;
-  delete photoMap[currentAddress];
+  if (photoMap[currentAddress]) photoMap[currentAddress].splice(index, 1);
   localStorage.setItem("photoMap", JSON.stringify(photoMap));
-  const preview = document.getElementById("photoPreview");
-  preview.style.display = "none";
-  preview.src = "";
-  document.getElementById("deletePhotoBtn").style.display = "none";
-  alert("사진이 삭제되었습니다.");
+  renderPhotos();
 }
+
   
-function handlePhotoClick() {
-  const imgUrl = photoMap[currentAddress];
+function handlePhotoClick(index) {
+  const imgUrl = photoMap[currentAddress]?.[index];
   if (!imgUrl) return;
   const dialog = document.createElement("div");
   dialog.style.position = "fixed";
@@ -335,17 +337,27 @@ function handlePhotoClick() {
     popup.document.write(`<img src='${imgUrl}' style='max-width:100%; height:auto;'>`);
     document.body.removeChild(dialog);
   };
-
   document.getElementById("deleteBtn").onclick = () => {
-    deletePhoto();
+    deletePhoto(index);
     document.body.removeChild(dialog);
   };
-
   document.getElementById("cancelBtn").onclick = () => {
     document.body.removeChild(dialog);
   };
 }
 
+  function renderPhotos() {
+  const container = document.getElementById("photoContainer");
+  container.innerHTML = "";
+  const photos = photoMap[currentAddress] || [];
+  photos.forEach((url, i) => {
+    const img = document.createElement("img");
+    img.src = url;
+    img.className = "photo-preview";
+    img.onclick = () => handlePhotoClick(i);
+    container.appendChild(img);
+  });
+}
   function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
@@ -471,17 +483,16 @@ function savePhoto() {
   const fileInput = document.getElementById("photoInput");
   const file = fileInput.files[0];
   if (!file || !currentAddress) return;
+  if (!photoMap[currentAddress]) photoMap[currentAddress] = [];
+  if (photoMap[currentAddress].length >= 5) return alert("사진은 최대 5장까지 등록할 수 있습니다.");
 
   const reader = new FileReader();
   reader.onload = function(e) {
     resizeImage(e.target.result, 1024, 1024, function(resizedBase64) {
       uploadToImgur(resizedBase64, function(imgurUrl) {
-        photoMap[currentAddress] = imgurUrl;
+        photoMap[currentAddress].push(imgurUrl);
         localStorage.setItem("photoMap", JSON.stringify(photoMap));
-        const preview = document.getElementById("photoPreview");
-        preview.src = imgurUrl;
-        preview.style.display = "block";
-        document.getElementById("deletePhotoBtn").style.display = "inline-block";
+        renderPhotos();
       });
     });
   };
@@ -550,18 +561,17 @@ function showDropdown() {
 
 function exportText() {
   const wb = XLSX.utils.book_new();
-  const data = [["주소", "상태", "메모", "사진 URL"]];
+  const data = [["주소", "상태", "메모", "사진 URL들"]];
   주소목록.forEach(addr => {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
-    const photo = photoMap[addr] || "";
-    data.push([addr, status, memo, photo]);
+    const photoList = (photoMap[addr] || []).join("\n");
+    data.push([addr, status, memo, photoList]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
   XLSX.writeFile(wb, "출장기록.xlsx");
 }
-  
 function openMapInNewTab() {
   const addr = currentAddress || document.getElementById("addrInput").value.trim();
   if (!addr) return alert("주소를 입력하세요.");
