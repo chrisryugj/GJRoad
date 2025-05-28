@@ -345,8 +345,9 @@ function handlePhotoClick(index) {
     document.body.removeChild(dialog);
   };
 }
- function renderPhotos() {
+function renderPhotos() {
   const container = document.getElementById("photoContainer");
+  if (!container) return;
   container.innerHTML = "";
   const photos = photoMap[currentAddress] || [];
   photos.forEach((url, i) => {
