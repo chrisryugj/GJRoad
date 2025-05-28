@@ -252,14 +252,16 @@ tr.status-직접입력 {
 
 <div id="tab-table" class="tab-content">
   <div class="card-ui">
-    <div id="tableSummary">총 0건</div>
-    <button onclick="copyTable()">📄 복사하기</button>
-    <button onclick="exportText()">📁 파일 다운로드</button>
-    <table style="width:100%; font-size:0.9rem;">
-      <thead><tr><th>주소</th><th>상태</th></tr></thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
+  <div id="tableSummary">총 0건</div>
+  <button onclick="copyTable()">📄 복사하기</button>
+  <button onclick="exportText()">📁 텍스트 다운로드</button>
+  <button onclick="exportText()">📥 엑셀로 다운로드</button> <!-- ✅ 추가 -->
+  <table style="width:100%; font-size:0.9rem;">
+    <thead><tr><th>주소</th><th>상태</th></tr></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
 </div>
 
 <div id="tab-stats" class="tab-content">
