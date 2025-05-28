@@ -288,15 +288,15 @@ tr.status-직접입력 {
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
 <script>
+let memoMode = localStorage.getItem("memoMode") === "true";
+let preferredMap = localStorage.getItem("preferredMap") || "naver";
+let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
 let memoMap = JSON.parse(localStorage.getItem("memoMap")) || {};
 let photoMap = JSON.parse(localStorage.getItem("photoMap")) || {};
 let 주소목록 = [];
-let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
 let currentAddress = null;
 let viewedAddresses = new Set();
-let preferredMap = localStorage.getItem("preferredMap") || "naver";
-  let memoMode = localStorage.getItem("memoMode") === "true";
-    let useAppDefault = localStorage.getItem("useApp") !== "false";
+let useAppDefault = localStorage.getItem("useApp") !== "false";
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
