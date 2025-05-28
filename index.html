@@ -518,31 +518,23 @@ function uploadToImgur(base64Image, callback) {
     alert("Imgur 업로드 오류 발생");
   });
 }
-
 function savePhoto() {
   const input = document.getElementById("photoInput");
   const files = input.files;
+  if (!files || !currentAddress) return;
 
-  if (!files || files.length === 0 || !currentAddress) return;
-
-  // 👇 파일 처리 먼저 하고 마지막에 초기화
   if (!Array.isArray(photoMap[currentAddress])) photoMap[currentAddress] = [];
   if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = [];
 
   const urls = photoMap[currentAddress];
-  const originals = originalPhotoMap[currentAddress];
-
-  if (urls.length >= 5) {
-    alert("사진은 최대 5장까지 등록할 수 있습니다.");
-    return;
-  }
+  if (urls.length >= 5) return alert("사진은 최대 5장까지 등록할 수 있습니다.");
 
   Array.from(files).forEach(file => {
     if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = async e => {
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         const canvas = document.createElement("canvas");
         const maxW = 800;
         const scale = maxW / img.width;
@@ -552,9 +544,11 @@ function savePhoto() {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const resized = canvas.toDataURL("image/jpeg", 0.8);
 
-        if (photoMap[currentAddress].length >= 5) return;
-        photoMap[currentAddress].push(resized);
-        originalPhotoMap[currentAddress].push(e.target.result);
+        const uploaded = await uploadToImgur(resized);
+        if (!uploaded) return;
+
+        photoMap[currentAddress].push(uploaded);
+        originalPhotoMap[currentAddress].push(uploaded);
         localStorage.setItem("photoMap", JSON.stringify(photoMap));
         renderPhotos();
       };
@@ -562,12 +556,12 @@ function savePhoto() {
     };
     reader.readAsDataURL(file);
   });
-
   // ✅ 파일 처리 후에 초기화
   setTimeout(() => {
     input.value = "";
   }, 500);
 }
+
 
 // Imgur 업로드
 function uploadToImgur(base64Image) {
