@@ -218,7 +218,7 @@ tr.status-직접입력 {
   <textarea id="memoInput" placeholder="현장 특이사항이나 참고 메모를 남기세요."></textarea>
 
   <label style="font-weight: bold;">📸 현장 사진 (최대 5장)</label>
-  <input type="file" id="photoInput" accept="image/*" onchange="savePhoto()">
+  <input type="file" id="photoInput" accept="image/*" multiple onchange="savePhoto()">
   <div id="photoContainer" class="photo-grid"></div>
 
   <button onclick="saveMemo()">💾 저장</button>
@@ -292,7 +292,8 @@ tr.status-직접입력 {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-  const originalPhotoMap = {};
+const originalPhotoMap = {};
+const photoMap = {};
 let memoMode = localStorage.getItem("memoMode") === "true";
 let preferredMap = localStorage.getItem("preferredMap") || "naver";
 let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
@@ -311,7 +312,7 @@ function deletePhoto(index) {
 }
 
 function handlePhotoClick(index) {
-  const imgUrl = originalPhotoMap[currentAddress]?.[index]; // 확대용 원본
+  const imgUrl = originalPhotoMap[currentAddress]?.[index];
   if (!imgUrl) return;
   const dialog = document.createElement("div");
   dialog.style.position = "fixed";
@@ -359,8 +360,7 @@ function renderPhotos() {
     container.appendChild(img);
   });
 }
-
- function exportText() {
+function exportText() {
   const wb = XLSX.utils.book_new();
   const data = [["주소", "상태", "메모", "사진"]];
   주소목록.forEach(addr => {
@@ -496,27 +496,42 @@ function uploadToImgur(base64Image, callback) {
 
 
 function savePhoto() {
-  const fileInput = document.getElementById("photoInput");
-  const file = fileInput.files[0];
-  if (!file || !currentAddress) return;
-  if (!photoMap[currentAddress]) photoMap[currentAddress] = [];
-  if (!originalPhotoMap[currentAddress]) originalPhotoMap[currentAddress] = [];
-  if (photoMap[currentAddress].length >= 5) return alert("사진은 최대 5장까지 등록할 수 있습니다.");
+  const input = document.getElementById("photoInput");
+  const files = input.files;
+  if (!files || !currentAddress) return;
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const originalBase64 = e.target.result;
-    originalPhotoMap[currentAddress].push(originalBase64);
-    localStorage.setItem("originalPhotoMap", JSON.stringify(originalPhotoMap));
-    resizeImage(originalBase64, 1024, 1024, function(resizedBase64) {
-      uploadToImgur(resizedBase64, function(imgurUrl) {
-        photoMap[currentAddress].push(imgurUrl);
-        localStorage.setItem("photoMap", JSON.stringify(photoMap));
+  const urls = photoMap[currentAddress] || [];
+  const originals = originalPhotoMap[currentAddress] || [];
+
+  if (urls.length >= 5) {
+    alert("사진은 최대 5장까지 등록할 수 있습니다.");
+    return;
+  }
+
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxW = 800;
+        const scale = maxW / img.width;
+        canvas.width = maxW;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const resized = canvas.toDataURL("image/jpeg", 0.8);
+
+        if (photoMap[currentAddress].length >= 5) return;
+        photoMap[currentAddress].push(resized);
+        originalPhotoMap[currentAddress].push(e.target.result);
         renderPhotos();
-      });
-    });
-  };
-  reader.readAsDataURL(file);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function showDropdown() {
