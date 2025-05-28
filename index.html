@@ -283,10 +283,6 @@ tr.status-직접입력 {
   (c) 2025 광진구청 가로경관과 개친절한 류주임
 </footer>
 
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  
 <script>
 let memoMode = localStorage.getItem("memoMode") === "true";
 let preferredMap = localStorage.getItem("preferredMap") || "naver";
@@ -297,7 +293,7 @@ let 주소목록 = [];
 let currentAddress = null;
 let viewedAddresses = new Set();
 let useAppDefault = localStorage.getItem("useApp") !== "false";
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 function deletePhoto() {
