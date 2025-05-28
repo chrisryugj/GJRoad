@@ -296,7 +296,7 @@ let currentAddress = null;
 let viewedAddresses = new Set();
 let preferredMap = localStorage.getItem("preferredMap") || "naver";
   let memoMode = localStorage.getItem("memoMode") === "true";
-  let useAppDefault = localStorage.getItem("useApp") !== "false";
+    let useAppDefault = localStorage.getItem("useApp") !== "false";
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
@@ -311,10 +311,7 @@ function deletePhoto() {
   alert("사진이 삭제되었습니다.");
 }
 function handlePhotoClick() {
-  const choice = prompt(
-    "사진 옵션을 선택하세요:\n1. 크게 보기\n2. 삭제\n3. 취소",
-    "1"
-  );
+  const choice = prompt("사진 옵션을 선택하세요:\\n1. 크게 보기\\n2. 삭제\\n3. 취소", "1");
   const src = document.getElementById("photoPreview").src;
   if (choice === "1") {
     const popup = window.open("", "_blank");
@@ -529,7 +526,9 @@ function openMapInNewTab() {
   } else if (mapType === "google") {
     url = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
   }
-
+  if (typeof memoMode !== 'undefined' && !memoMode) {
+  openMapInNewTab();
+}
   window.open(url, "_blank"); // 브라우저에서 새창으로 열기 (앱 연동은 시스템이 처리)
 }
 
