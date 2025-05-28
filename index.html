@@ -201,7 +201,7 @@ tr.status-직접입력 {
   oninput="showDropdown()"
   onclick="showDropdown()"
 />
- <div id="memoSection" class="card-ui" style="display:none;">
+<div id="memoSection" class="card-ui" style="display:none;">
   <label for="memoInput" style="font-weight: bold;">📝 현장 메모</label>
   <textarea id="memoInput" placeholder="현장 특이사항이나 참고 메모를 남기세요."></textarea>
 
@@ -211,6 +211,7 @@ tr.status-직접입력 {
 
   <button onclick="saveMemo()">💾 저장</button>
 </div>
+
   <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 </div>
  
@@ -277,7 +278,8 @@ tr.status-직접입력 {
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>  
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
 <script>
 let memoMap = JSON.parse(localStorage.getItem("memoMap")) || {};
 let photoMap = JSON.parse(localStorage.getItem("photoMap")) || {};
@@ -362,16 +364,43 @@ function saveMemo() {
   alert("메모가 저장되었습니다.");
   showDropdown();
 }
-  function savePhoto() {
+function resizeImage(base64, maxWidth, maxHeight, callback) {
+  const img = new Image();
+  img.onload = function () {
+    const canvas = document.createElement("canvas");
+    let width = img.width;
+    let height = img.height;
+
+    if (width > maxWidth || height > maxHeight) {
+      const ratio = Math.min(maxWidth / width, maxHeight / height);
+      width = width * ratio;
+      height = height * ratio;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, width, height);
+    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.7); // 압축률 조절
+    callback(resizedBase64);
+  };
+  img.src = base64;
+}
+
+function savePhoto() {
   const fileInput = document.getElementById("photoInput");
   const file = fileInput.files[0];
   if (!file || !currentAddress) return;
+
   const reader = new FileReader();
   reader.onload = function(e) {
-    photoMap[currentAddress] = e.target.result;
-    localStorage.setItem("photoMap", JSON.stringify(photoMap));
-    document.getElementById("photoPreview").src = e.target.result;
-    document.getElementById("photoPreview").style.display = "block";
+    resizeImage(e.target.result, 800, 800, function(resizedBase64) {
+      photoMap[currentAddress] = resizedBase64;
+      localStorage.setItem("photoMap", JSON.stringify(photoMap));
+      const preview = document.getElementById("photoPreview");
+      preview.src = resizedBase64;
+      preview.style.display = "block";
+    });
   };
   reader.readAsDataURL(file);
 }
@@ -430,12 +459,13 @@ function showDropdown() {
 
 function exportText() {
   const wb = XLSX.utils.book_new();
-  const data = [["주소", "상태", "메모", "사진(Base64 URL)"]];
+  const data = [["주소", "상태", "메모", "사진 URL"]];
   주소목록.forEach(addr => {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
     const photo = photoMap[addr] || "";
-    data.push([addr, status, memo, photo]);
+    const shortPhoto = photo.length > 32767 ? "(사진 생략됨 - 크기 초과)" : photo;
+    data.push([addr, status, memo, shortPhoto]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
