@@ -365,12 +365,15 @@ function renderPhotos() {
   
 function exportText() {
   const wb = XLSX.utils.book_new();
-  const data = [["주소", "상태", "메모", "사진"]];
+  const data = [["주소", "상태", "메모", "사진 링크"]];
   주소목록.forEach(addr => {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
-    const photoList = (Array.isArray(photoMap[addr]) ? photoMap[addr] : []).slice(0, 3).map(url => `=HYPERLINK("${url}","사진")`).join(", ");
-    data.push([addr, status, memo, photoList]);
+    const photoLinks = (Array.isArray(photoMap[addr]) ? photoMap[addr] : [])
+      .map((url, i) => `사진${i + 1}: ${url}`)
+      .join("
+");
+    data.push([addr, status, memo, photoLinks]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
@@ -446,11 +449,11 @@ function saveMemo() {
     memoMap[currentAddress] = `${datePrefix} ${timePrefix} - ${memo}`;
   }
   localStorage.setItem("memoMap", JSON.stringify(memoMap));
+  localStorage.setItem("photoMap", JSON.stringify(photoMap));
   alert("메모가 저장되었습니다.");
   document.getElementById("customDropdown").style.display = "block";
   showDropdown();
 }
-
 function resizeImage(base64, maxWidth, maxHeight, callback) {
   const img = new Image();
   img.onload = function () {
