@@ -371,14 +371,14 @@ function exportText() {
     const memo = memoMap[addr] || "";
     const photoLinks = (Array.isArray(photoMap[addr]) ? photoMap[addr] : [])
       .map((url, i) => `사진${i + 1}: ${url}`)
-      .join("
-");
+      .join("\n"); // ✅ 줄바꿈 문자 올바르게 처리
     data.push([addr, status, memo, photoLinks]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
   XLSX.writeFile(wb, "출장기록.xlsx");
 }
+
 
   
   function isIOS() {
