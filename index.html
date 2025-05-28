@@ -365,14 +365,15 @@ function exportText() {
   주소목록.forEach(addr => {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
-    const photoList = (photoMap[addr] || []).map(url => `=IMAGE("${url}")`).join("\n");
+    const photoList = Array.isArray(photoMap[addr])
+      ? photoMap[addr].map(url => `=IMAGE("${url}")`).join("\n")
+      : "";
     data.push([addr, status, memo, photoList]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
   XLSX.writeFile(wb, "출장기록.xlsx");
 }
-  
   function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
@@ -499,16 +500,19 @@ function savePhoto() {
   const files = input.files;
   if (!files || !currentAddress) return;
 
-  if (!photoMap[currentAddress]) photoMap[currentAddress] = [];
-  if (!originalPhotoMap[currentAddress]) originalPhotoMap[currentAddress] = [];
+  // ✅ 항상 배열 보장
+  if (!Array.isArray(photoMap[currentAddress])) photoMap[currentAddress] = [];
+  if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = [];
 
   const urls = photoMap[currentAddress];
   const originals = originalPhotoMap[currentAddress];
 
+  // ✅ 5장 제한 체크
   if (urls.length >= 5) {
     alert("사진은 최대 5장까지 등록할 수 있습니다.");
     return;
   }
+
   Array.from(files).forEach(file => {
     if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
@@ -524,7 +528,9 @@ function savePhoto() {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const resized = canvas.toDataURL("image/jpeg", 0.8);
 
+        // ✅ 다시 한 번 5장 확인
         if (photoMap[currentAddress].length >= 5) return;
+
         photoMap[currentAddress].push(resized);
         originalPhotoMap[currentAddress].push(e.target.result);
         renderPhotos();
@@ -534,6 +540,7 @@ function savePhoto() {
     reader.readAsDataURL(file);
   });
 }
+
 
 function showDropdown() {
   const input = document.getElementById("addrInput");
