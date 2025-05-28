@@ -518,8 +518,6 @@ function savePhoto() {
   reader.readAsDataURL(file);
 }
 
-
-
 function showDropdown() {
   const input = document.getElementById("addrInput");
   const dropdown = document.getElementById("customDropdown");
@@ -558,15 +556,7 @@ function showDropdown() {
       document.getElementById("memoInput").value = memoMap[addr] || "";
       document.getElementById("memoSection").style.display = "block";
 
-      const photoUrl = photoMap[addr];
-      const preview = document.getElementById("photoPreview");
-      if (photoUrl) {
-        preview.src = photoUrl;
-        preview.style.display = "block";
-      } else {
-        preview.src = "";
-        preview.style.display = "none";
-      }
+      renderPhotos();
 
       dropdown.style.display = "none";
 
