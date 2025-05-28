@@ -214,6 +214,7 @@ tr.status-직접입력 {
   <label for="photoInput" style="font-weight: bold;">📸 현장 사진</label>
   <input type="file" id="photoInput" accept="image/*" onchange="savePhoto()">
   <img id="photoPreview" class="photo-preview" style="display:none;">
+<button onclick="deletePhoto()" style="margin-top:5px; display:none;" id="deletePhotoBtn">❌ 사진 삭제</button>
 
   <button onclick="saveMemo()">💾 저장</button>
 </div>
