@@ -223,6 +223,7 @@ tr.status-직접입력 {
 
   <button onclick="saveMemo()">💾 저장</button>
 </div>
+
   <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 </div>
  
@@ -308,9 +309,8 @@ function deletePhoto(index) {
   renderPhotos();
 }
 
-  
 function handlePhotoClick(index) {
-  const imgUrl = photoMap[currentAddress]?.[index];
+  const imgUrl = originalPhotoMap[currentAddress]?.[index]; // 확대용 원본
   if (!imgUrl) return;
   const dialog = document.createElement("div");
   dialog.style.position = "fixed";
@@ -345,8 +345,7 @@ function handlePhotoClick(index) {
     document.body.removeChild(dialog);
   };
 }
-
-  function renderPhotos() {
+ function renderPhotos() {
   const container = document.getElementById("photoContainer");
   container.innerHTML = "";
   const photos = photoMap[currentAddress] || [];
@@ -358,6 +357,21 @@ function handlePhotoClick(index) {
     container.appendChild(img);
   });
 }
+
+  function exportText() {
+  const wb = XLSX.utils.book_new();
+  const data = [["주소", "상태", "메모", "사진"]];
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || "미선택";
+    const memo = memoMap[addr] || "";
+    const photoList = (photoMap[addr] || []).map(url => `=IMAGE("${url}")`).join("\n");
+    data.push([addr, status, memo, photoList]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, "출장기록");
+  XLSX.writeFile(wb, "출장기록.xlsx");
+}
+  
   function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
@@ -562,20 +576,6 @@ function showDropdown() {
   });
 }
 
-
-function exportText() {
-  const wb = XLSX.utils.book_new();
-  const data = [["주소", "상태", "메모", "사진 URL들"]];
-  주소목록.forEach(addr => {
-    const status = statusMap[addr] || "미선택";
-    const memo = memoMap[addr] || "";
-    const photoList = (photoMap[addr] || []).map(url => `=HYPERLINK(\"${url}\",\"사진보기\")`).join("\n");
-    data.push([addr, status, memo, photoList]);
-  });
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, "출장기록");
-  XLSX.writeFile(wb, "출장기록.xlsx");
-}
   
 function openMapInNewTab() {
   const addr = currentAddress || document.getElementById("addrInput").value.trim();
