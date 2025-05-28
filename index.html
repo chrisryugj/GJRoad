@@ -283,6 +283,16 @@ tr.status-직접입력 {
   (c) 2025 광진구청 가로경관과 개친절한 류주임
 </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">function deletePhoto() {
+  if (!currentAddress) return;
+  delete photoMap[currentAddress];
+  localStorage.setItem("photoMap", JSON.stringify(photoMap));
+  document.getElementById("photoPreview").style.display = "none";
+  document.getElementById("photoPreview").src = "";
+  document.getElementById("deletePhotoBtn").style.display = "none";
+  alert("사진이 삭제되었습니다.");
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
@@ -379,21 +389,21 @@ function resizeImage(base64, maxWidth, maxHeight, callback) {
     let width = img.width;
     let height = img.height;
 
-    if (width > maxWidth || height > maxHeight) {
-      const ratio = Math.min(maxWidth / width, maxHeight / height);
-      width = width * ratio;
-      height = height * ratio;
-    }
+    // 더 작게 줄이기 (기존보다 절반 이하로)
+    const ratio = Math.min(300 / width, 300 / height, 1);
+    width = width * ratio;
+    height = height * ratio;
 
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, width, height);
-    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.5); // 더 낮은 품질
     callback(resizedBase64);
   };
   img.src = base64;
 }
+
 
 
 function savePhoto() {
