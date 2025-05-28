@@ -17,6 +17,12 @@
     border-radius: 6px;
     border: 1px solid #ccc;
   }
+      #customDropdown {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    width: calc(100% - 22px);
+  }
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f7f9fc;
@@ -362,8 +368,10 @@ function saveMemo() {
   }
   localStorage.setItem("memoMap", JSON.stringify(memoMap));
   alert("메모가 저장되었습니다.");
+  document.getElementById("customDropdown").style.display = "block";
   showDropdown();
 }
+
 function resizeImage(base64, maxWidth, maxHeight, callback) {
   const img = new Image();
   img.onload = function () {
@@ -381,11 +389,12 @@ function resizeImage(base64, maxWidth, maxHeight, callback) {
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, width, height);
-    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.7); // 압축률 조절
+    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.7);
     callback(resizedBase64);
   };
   img.src = base64;
 }
+
 
 function savePhoto() {
   const fileInput = document.getElementById("photoInput");
@@ -404,11 +413,16 @@ function savePhoto() {
   };
   reader.readAsDataURL(file);
 }
+
 function showDropdown() {
   const input = document.getElementById("addrInput");
   const dropdown = document.getElementById("customDropdown");
+  const inputRect = input.getBoundingClientRect();
   dropdown.innerHTML = "";
+  dropdown.style.top = input.offsetTop + input.offsetHeight + "px";
+  dropdown.style.left = input.offsetLeft + "px";
   dropdown.style.display = "block";
+
   주소목록.filter(addr => addr.includes(input.value)).forEach(addr => {
     const div = document.createElement("div");
     div.className = "dropdown-item";
@@ -457,6 +471,7 @@ function showDropdown() {
   });
 }
 
+
 function exportText() {
   const wb = XLSX.utils.book_new();
   const data = [["주소", "상태", "메모", "사진 URL"]];
@@ -464,14 +479,13 @@ function exportText() {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
     const photo = photoMap[addr] || "";
-    const shortPhoto = photo.length > 32767 ? "(사진 생략됨 - 크기 초과)" : photo;
+    const shortPhoto = photo.length > 30000 ? "(사진 생략됨 - 크기 초과)" : photo;
     data.push([addr, status, memo, shortPhoto]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
   XLSX.writeFile(wb, "출장기록.xlsx");
 }
-
 function openMapInNewTab() {
   const addr = currentAddress || document.getElementById("addrInput").value.trim();
   if (!addr) return alert("주소를 입력하세요.");
