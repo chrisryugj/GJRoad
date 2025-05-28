@@ -11,6 +11,12 @@
     margin-left: 8px;
     font-size: 1rem;
   }
+    .photo-preview {
+    max-width: 100%;
+    margin-top: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f7f9fc;
@@ -195,10 +201,15 @@ tr.status-직접입력 {
   oninput="showDropdown()"
   onclick="showDropdown()"
 />
-  <div id="memoSection" class="card-ui" style="display:none;">
+ <div id="memoSection" class="card-ui" style="display:none;">
   <label for="memoInput" style="font-weight: bold;">📝 현장 메모</label>
   <textarea id="memoInput" placeholder="현장 특이사항이나 참고 메모를 남기세요."></textarea>
-  <button onclick="saveMemo()">💾 메모 저장</button>
+
+  <label for="photoInput" style="font-weight: bold;">📸 현장 사진</label>
+  <input type="file" id="photoInput" accept="image/*" onchange="savePhoto()">
+  <img id="photoPreview" class="photo-preview" style="display:none;">
+
+  <button onclick="saveMemo()">💾 저장</button>
 </div>
   <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 </div>
@@ -264,8 +275,10 @@ tr.status-직접입력 {
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>  
 <script>
-  let memoMap = JSON.parse(localStorage.getItem("memoMap")) || {};
+let memoMap = JSON.parse(localStorage.getItem("memoMap")) || {};
+let photoMap = JSON.parse(localStorage.getItem("photoMap")) || {};
 let 주소목록 = [];
 let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
 let currentAddress = null;
@@ -347,7 +360,19 @@ function saveMemo() {
   alert("메모가 저장되었습니다.");
   showDropdown();
 }
-
+  function savePhoto() {
+  const fileInput = document.getElementById("photoInput");
+  const file = fileInput.files[0];
+  if (!file || !currentAddress) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    photoMap[currentAddress] = e.target.result;
+    localStorage.setItem("photoMap", JSON.stringify(photoMap));
+    document.getElementById("photoPreview").src = e.target.result;
+    document.getElementById("photoPreview").style.display = "block";
+  };
+  reader.readAsDataURL(file);
+}
 function showDropdown() {
   const input = document.getElementById("addrInput");
   const dropdown = document.getElementById("customDropdown");
@@ -379,15 +404,22 @@ function showDropdown() {
         customInput.value = "";
       }
 
-      const memo = memoMap[addr] || "";
-      document.getElementById("memoInput").value = memo;
+      document.getElementById("memoInput").value = memoMap[addr] || "";
       document.getElementById("memoSection").style.display = "block";
+
+      const photoUrl = photoMap[addr];
+      const preview = document.getElementById("photoPreview");
+      if (photoUrl) {
+        preview.src = photoUrl;
+        preview.style.display = "block";
+      } else {
+        preview.src = "";
+        preview.style.display = "none";
+      }
 
       dropdown.style.display = "none";
 
-      if (!memoMode) {
-        openMapInNewTab();
-      }
+      if (!memoMode) openMapInNewTab();
     };
 
     dropdown.appendChild(div);
@@ -395,17 +427,17 @@ function showDropdown() {
 }
 
 function exportText() {
-  let text = "주소\t상태\t메모\n";
+  const wb = XLSX.utils.book_new();
+  const data = [["주소", "상태", "메모", "사진(Base64 URL)"]];
   주소목록.forEach(addr => {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
-    text += `${addr}\t${status}\t${memo}\n`;
+    const photo = photoMap[addr] || "";
+    data.push([addr, status, memo, photo]);
   });
-  const blob = new Blob([text], { type: 'text/plain' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "출장기록.txt";
-  link.click();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, "출장기록");
+  XLSX.writeFile(wb, "출장기록.xlsx");
 }
 
 function openMapInNewTab() {
