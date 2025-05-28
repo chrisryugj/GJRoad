@@ -306,18 +306,42 @@ function deletePhoto() {
   alert("사진이 삭제되었습니다.");
 }
 function handlePhotoClick() {
-  const choice = prompt("사진 옵션을 선택하세요:\\n1. 크게 보기\\n2. 삭제\\n3. 취소", "1");
-  const src = document.getElementById("photoPreview").src;
-  if (choice === "1") {
+  const dialog = document.createElement("div");
+  dialog.style.position = "fixed";
+  dialog.style.top = "50%";
+  dialog.style.left = "50%";
+  dialog.style.transform = "translate(-50%, -50%)";
+  dialog.style.background = "white";
+  dialog.style.padding = "20px";
+  dialog.style.border = "1px solid #ccc";
+  dialog.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+  dialog.style.zIndex = 9999;
+  dialog.innerHTML = `
+    <p>사진 옵션을 선택하세요:</p>
+    <button id="viewBtn">📷 크게 보기</button>
+    <button id="deleteBtn">❌ 삭제</button>
+    <button id="cancelBtn">취소</button>
+  `;
+  document.body.appendChild(dialog);
+
+  document.getElementById("viewBtn").onclick = () => {
+    const src = document.getElementById("photoPreview").src;
     const popup = window.open("", "_blank");
     popup.document.write(`<img src='${src}' style='max-width:100%;'>`);
-  } else if (choice === "2") {
+    document.body.removeChild(dialog);
+  };
+
+  document.getElementById("deleteBtn").onclick = () => {
     deletePhoto();
-  }
+    document.body.removeChild(dialog);
+  };
+
+  document.getElementById("cancelBtn").onclick = () => {
+    document.body.removeChild(dialog);
+  };
 }
-
-
-
+}
+}
   function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
