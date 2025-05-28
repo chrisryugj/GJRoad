@@ -311,10 +311,10 @@ function deletePhoto() {
   alert("사진이 삭제되었습니다.");
 }
 function handlePhotoClick() {
-  const choice = prompt("사진 옵션을 선택하세요:
-1. 크게 보기
-2. 삭제
-3. 취소", "1");
+  const choice = prompt(
+    "사진 옵션을 선택하세요:\n1. 크게 보기\n2. 삭제\n3. 취소",
+    "1"
+  );
   const src = document.getElementById("photoPreview").src;
   if (choice === "1") {
     const popup = window.open("", "_blank");
@@ -323,6 +323,7 @@ function handlePhotoClick() {
     deletePhoto();
   }
 }
+
 
 
   function isIOS() {
