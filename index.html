@@ -515,8 +515,6 @@ function savePhoto() {
   if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = [];
 
   const urls = photoMap[currentAddress];
-  const originals = originalPhotoMap[currentAddress];
-
   if (urls.length >= 5) {
     alert("사진은 최대 5장까지 등록할 수 있습니다.");
     return;
@@ -526,27 +524,41 @@ function savePhoto() {
     if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
     reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const maxW = 800;
-        const scale = maxW / img.width;
-        canvas.width = maxW;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const resized = canvas.toDataURL("image/jpeg", 0.8);
-
+      uploadToImgur(e.target.result).then(imgurUrl => {
         if (photoMap[currentAddress].length >= 5) return;
-        photoMap[currentAddress].push(resized);
-        originalPhotoMap[currentAddress].push(e.target.result);
+        photoMap[currentAddress].push(imgurUrl);
+        originalPhotoMap[currentAddress].push(imgurUrl);
+        localStorage.setItem("photoMap", JSON.stringify(photoMap));
         renderPhotos();
-      };
-      img.src = e.target.result;
+      });
     };
     reader.readAsDataURL(file);
   });
 }
+
+// Imgur 업로드
+function uploadToImgur(base64Image) {
+  return fetch("https://api.imgur.com/3/image", {
+    method: "POST",
+    headers: {
+      Authorization: "Client-ID a0058fd0a6e3657",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      image: base64Image.split(",")[1], // 'data:image/jpeg;base64,...'에서 base64 부분만 추출
+      type: "base64"
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.data && data.data.link) {
+        return data.data.link;
+      } else {
+        throw new Error("Imgur 업로드 실패");
+      }
+    });
+}
+
 
 
 function showDropdown() {
