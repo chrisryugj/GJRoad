@@ -370,21 +370,34 @@ function renderPhotos() {
   
 function exportText() {
   const wb = XLSX.utils.book_new();
-  const data = [["주소", "상태", "메모", "사진 링크"]];
+  const data = [["주소", "상태", "메모", "사진1", "사진2", "사진3", "사진4", "사진5"]];
   주소목록.forEach(addr => {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
-    const photoLinks = (Array.isArray(photoMap[addr]) ? photoMap[addr].slice(0, 5) : [])
-  .map((url, i) => `사진${i + 1}: ${url}`)
-  .join("; ");
+    const photos = Array.isArray(photoMap[addr]) ? photoMap[addr] : [];
+    const links = photos.map(url => ({ l: { Target: url }, t: url }));
     const limitedMemo = memo.length > 10000 ? memo.slice(0, 10000) + "..." : memo;
-    data.push([addr, status, limitedMemo, photoLinks]);
+    const row = [addr, status, limitedMemo, ...photos.slice(0, 5)];
+    while (row.length < 8) row.push("");
+    data.push(row);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
+
+  // 사진 링크 셀에 하이퍼링크 추가
+  data.forEach((row, rowIndex) => {
+    if (rowIndex === 0) return; // 헤더 제외
+    for (let i = 3; i <= 7; i++) {
+      const cellAddr = XLSX.utils.encode_cell({ r: rowIndex, c: i });
+      const val = row[i];
+      if (val && typeof val === "string") {
+        ws[cellAddr].l = { Target: val };
+      }
+    }
+  });
+
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
   XLSX.writeFile(wb, "출장기록.xlsx");
 }
-
 
   
   function isIOS() {
