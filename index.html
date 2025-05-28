@@ -370,9 +370,10 @@ function exportText() {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
     const photoLinks = (Array.isArray(photoMap[addr]) ? photoMap[addr] : [])
-      .map((url, i) => `사진${i + 1}: ${url}`)
-      .join("\n"); // ✅ 줄바꿈 문자 올바르게 처리
-    data.push([addr, status, memo, photoLinks]);
+      .map((url, i) => `사진${i + 1}: ${url}`) // 엑셀 셀 텍스트 길이 초과 방지
+      .join("; ");
+    const limitedMemo = memo.length > 10000 ? memo.slice(0, 10000) + "..." : memo;
+    data.push([addr, status, limitedMemo, photoLinks]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
