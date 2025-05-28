@@ -282,6 +282,7 @@ tr.status-직접입력 {
 <footer>
   (c) 2025 광진구청 가로경관과 개친절한 류주임
 </footer>
+  
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
@@ -305,6 +306,7 @@ function deletePhoto() {
   document.getElementById("deletePhotoBtn").style.display = "none";
   alert("사진이 삭제되었습니다.");
 }
+  
 function handlePhotoClick() {
   const dialog = document.createElement("div");
   dialog.style.position = "fixed";
@@ -342,6 +344,7 @@ function handlePhotoClick() {
     document.body.removeChild(dialog);
   };
 }
+
   function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
@@ -421,22 +424,45 @@ function resizeImage(base64, maxWidth, maxHeight, callback) {
     const canvas = document.createElement("canvas");
     let width = img.width;
     let height = img.height;
-
-    // 더 작게 줄이기 (기존보다 절반 이하로)
     const ratio = Math.min(300 / width, 300 / height, 1);
     width = width * ratio;
     height = height * ratio;
-
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, width, height);
-    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.5); // 더 낮은 품질
+    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.5);
     callback(resizedBase64);
   };
   img.src = base64;
 }
 
+function uploadToImgur(base64Image, callback) {
+  const base64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
+  fetch("https://api.imgur.com/3/image", {
+    method: "POST",
+    headers: {
+      Authorization: "Client-ID a0058fd0a6e3657",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      image: base64,
+      type: "base64"
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      callback(data.data.link);
+    } else {
+      alert("Imgur 업로드 실패");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Imgur 업로드 오류 발생");
+  });
+}
 
 
 function savePhoto() {
@@ -447,15 +473,19 @@ function savePhoto() {
   const reader = new FileReader();
   reader.onload = function(e) {
     resizeImage(e.target.result, 800, 800, function(resizedBase64) {
-      photoMap[currentAddress] = resizedBase64;
-      localStorage.setItem("photoMap", JSON.stringify(photoMap));
-      const preview = document.getElementById("photoPreview");
-      preview.src = resizedBase64;
-      preview.style.display = "block";
+      uploadToImgur(resizedBase64, function(imgurUrl) {
+        photoMap[currentAddress] = imgurUrl;
+        localStorage.setItem("photoMap", JSON.stringify(photoMap));
+        const preview = document.getElementById("photoPreview");
+        preview.src = imgurUrl;
+        preview.style.display = "block";
+        document.getElementById("deletePhotoBtn").style.display = "inline-block";
+      });
     });
   };
   reader.readAsDataURL(file);
 }
+
 
 function showDropdown() {
   const input = document.getElementById("addrInput");
@@ -522,13 +552,13 @@ function exportText() {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
     const photo = photoMap[addr] || "";
-    const shortPhoto = photo.length > 30000 ? "(사진 생략됨 - 크기 초과)" : photo;
-    data.push([addr, status, memo, shortPhoto]);
+    data.push([addr, status, memo, photo]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
   XLSX.writeFile(wb, "출장기록.xlsx");
 }
+  
 function openMapInNewTab() {
   const addr = currentAddress || document.getElementById("addrInput").value.trim();
   if (!addr) return alert("주소를 입력하세요.");
