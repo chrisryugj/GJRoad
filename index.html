@@ -317,10 +317,12 @@ function handlePhotoClick() {
   dialog.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
   dialog.style.zIndex = 9999;
   dialog.innerHTML = `
-    <p>사진 옵션을 선택하세요:</p>
-    <button id="viewBtn">📷 크게 보기</button>
-    <button id="deleteBtn">❌ 삭제</button>
-    <button id="cancelBtn">취소</button>
+    <p style="margin-bottom: 10px;">사진 옵션을 선택하세요:</p>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button id="viewBtn">📷 크게 보기</button>
+      <button id="deleteBtn">❌ 삭제</button>
+      <button id="cancelBtn">취소</button>
+    </div>
   `;
   document.body.appendChild(dialog);
 
@@ -339,8 +341,6 @@ function handlePhotoClick() {
   document.getElementById("cancelBtn").onclick = () => {
     document.body.removeChild(dialog);
   };
-}
-}
 }
   function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
