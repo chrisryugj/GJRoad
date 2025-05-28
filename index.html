@@ -349,7 +349,7 @@ function renderPhotos() {
   const container = document.getElementById("photoContainer");
   if (!container) return;
   container.innerHTML = "";
-  const photos = photoMap[currentAddress] || [];
+  const photos = Array.isArray(photoMap[currentAddress]) ? photoMap[currentAddress] : [];
   photos.forEach((url, i) => {
     const img = document.createElement("img");
     img.src = url;
@@ -359,7 +359,7 @@ function renderPhotos() {
   });
 }
 
-  function exportText() {
+ function exportText() {
   const wb = XLSX.utils.book_new();
   const data = [["주소", "상태", "메모", "사진"]];
   주소목록.forEach(addr => {
