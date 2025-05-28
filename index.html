@@ -351,10 +351,12 @@ function handlePhotoClick(index) {
   
 function renderPhotos() {
   const container = document.getElementById("photoContainer");
-  if (!container) return;
+  if (!container || !currentAddress) return;
+
   container.innerHTML = "";
   const photos = Array.isArray(photoMap[currentAddress]) ? photoMap[currentAddress] : [];
-  if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = photoMap[currentAddress];
+  if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = [...photos];
+
   photos.forEach((url, i) => {
     const img = document.createElement("img");
     img.src = url;
@@ -363,8 +365,8 @@ function renderPhotos() {
     img.onclick = () => handlePhotoClick(i);
     container.appendChild(img);
   });
-});
 }
+
   
 function exportText() {
   const wb = XLSX.utils.book_new();
