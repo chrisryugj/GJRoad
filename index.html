@@ -207,7 +207,7 @@ tr.status-직접입력 {
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
     <label for="statusSelect" style="font-weight: bold;">📝 출장 상태 선택</label>
     <label style="font-size: 0.9rem;">
-      <input type="checkbox" id="memoModeToggle" onchange="saveMemoMode()"> 메모모드
+      <input type="checkbox" id="memoModeToggle" onchange="saveMemoMode()"> 📝메모전용모드
     </label>
   </div>
   
@@ -338,8 +338,10 @@ function saveMemo() {
   if (!memo) {
     delete memoMap[currentAddress];
   } else {
-    const datePrefix = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    memoMap[currentAddress] = `${datePrefix} - ${memo}`;
+    const now = new Date();
+    const datePrefix = now.toISOString().slice(0, 10);
+    const timePrefix = now.toTimeString().slice(0, 5);
+    memoMap[currentAddress] = `${datePrefix} ${timePrefix} - ${memo}`;
   }
   localStorage.setItem("memoMap", JSON.stringify(memoMap));
   alert("메모가 저장되었습니다.");
@@ -377,7 +379,6 @@ function showDropdown() {
         customInput.value = "";
       }
 
-      // 메모 출력
       const memo = memoMap[addr] || "";
       document.getElementById("memoInput").value = memo;
       document.getElementById("memoSection").style.display = "block";
@@ -391,6 +392,20 @@ function showDropdown() {
 
     dropdown.appendChild(div);
   });
+}
+
+function exportText() {
+  let text = "주소\t상태\t메모\n";
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || "미선택";
+    const memo = memoMap[addr] || "";
+    text += `${addr}\t${status}\t${memo}\n`;
+  });
+  const blob = new Blob([text], { type: 'text/plain' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "출장기록.txt";
+  link.click();
 }
 
 function openMapInNewTab() {
@@ -530,18 +545,6 @@ function copyTable() {
   navigator.clipboard.writeText(text).then(() => alert("복사 완료"));
 }
 
-function exportText() {
-  let text = "주소\t상태\n";
-  주소목록.forEach(addr => {
-    const status = statusMap[addr] || "미선택";
-    text += addr + "\t" + status + "\n";
-  });
-  const blob = new Blob([text], { type: 'text/plain' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "출장기록.txt";
-  link.click();
-}
 
 function drawChart() {
   const ctx = document.getElementById("statusChart").getContext("2d");
