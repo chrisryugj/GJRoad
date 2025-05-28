@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>진출로 – 출장길 도우미</title>
   <style>
+     .dropdown-item.memo-marked::after {
+    content: "\1F4DD"; /* 📝 */
+    float: right;
+    margin-left: 8px;
+    font-size: 1rem;
+  }
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f7f9fc;
@@ -189,6 +195,11 @@ tr.status-직접입력 {
   oninput="showDropdown()"
   onclick="showDropdown()"
 />
+  <div id="memoSection" class="card-ui" style="display:none;">
+  <label for="memoInput" style="font-weight: bold;">📝 현장 메모</label>
+  <textarea id="memoInput" placeholder="현장 특이사항이나 참고 메모를 남기세요."></textarea>
+  <button onclick="saveMemo()">💾 메모 저장</button>
+</div>
   <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 </div>
  
@@ -254,6 +265,7 @@ tr.status-직접입력 {
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  let memoMap = JSON.parse(localStorage.getItem("memoMap")) || {};
 let 주소목록 = [];
 let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
 let currentAddress = null;
@@ -319,6 +331,21 @@ function saveMapPreference() {
   localStorage.setItem("preferredMap", preferredMap);
 }
 
+function saveMemo() {
+  if (!currentAddress) return;
+  const memoInput = document.getElementById("memoInput");
+  const memo = memoInput.value.trim();
+  if (!memo) {
+    delete memoMap[currentAddress];
+  } else {
+    const datePrefix = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    memoMap[currentAddress] = `${datePrefix} - ${memo}`;
+  }
+  localStorage.setItem("memoMap", JSON.stringify(memoMap));
+  alert("메모가 저장되었습니다.");
+  showDropdown();
+}
+
 function showDropdown() {
   const input = document.getElementById("addrInput");
   const dropdown = document.getElementById("customDropdown");
@@ -327,36 +354,40 @@ function showDropdown() {
   주소목록.filter(addr => addr.includes(input.value)).forEach(addr => {
     const div = document.createElement("div");
     div.className = "dropdown-item";
-
-
     if (viewedAddresses.has(addr)) div.classList.add("viewed");
     if (statusMap[addr]) div.classList.add("status-marked");
+    if (memoMap[addr]) div.classList.add("memo-marked");
+
     div.textContent = statusMap[addr] ? addr + " [" + statusMap[addr] + "]" : addr;
- div.onclick = () => {
-  currentAddress = addr;
-  viewedAddresses.add(addr);
-  saveViewedAddresses();
-  document.getElementById("addrInput").value = addr;
-  document.getElementById("statusSelect").value = statusMap[addr] || "";
-  const value = statusMap[addr] || "";
+    div.onclick = () => {
+      currentAddress = addr;
+      viewedAddresses.add(addr);
+      saveViewedAddresses();
+      document.getElementById("addrInput").value = addr;
+      document.getElementById("statusSelect").value = statusMap[addr] || "";
 
-  const customInput = document.getElementById("customStatusInput");
-  if (!["출장완료", "미출장", ""].includes(value)) {
-    document.getElementById("statusSelect").value = "직접입력";
-    customInput.style.display = "block";
-    customInput.value = value;
-  } else {
-    customInput.style.display = "none";
-    customInput.value = "";
-  }
+      const value = statusMap[addr] || "";
+      const customInput = document.getElementById("customStatusInput");
+      if (!["출장완료", "미출장", ""].includes(value)) {
+        document.getElementById("statusSelect").value = "직접입력";
+        customInput.style.display = "block";
+        customInput.value = value;
+      } else {
+        customInput.style.display = "none";
+        customInput.value = "";
+      }
 
-  dropdown.style.display = "none";
+      // 메모 출력
+      const memo = memoMap[addr] || "";
+      document.getElementById("memoInput").value = memo;
+      document.getElementById("memoSection").style.display = "block";
 
-  // ✅ 메모모드가 아닐 때만 지도 열기
-  if (!memoMode) {
-    openMapInNewTab();
-  }
-};
+      dropdown.style.display = "none";
+
+      if (!memoMode) {
+        openMapInNewTab();
+      }
+    };
 
     dropdown.appendChild(div);
   });
