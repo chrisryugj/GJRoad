@@ -284,16 +284,31 @@ tr.status-직접입력 {
   (c) 2025 광진구청 가로경관과 개친절한 류주임
 </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">function deletePhoto() {
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+function deletePhoto() {
   if (!currentAddress) return;
   delete photoMap[currentAddress];
   localStorage.setItem("photoMap", JSON.stringify(photoMap));
-  document.getElementById("photoPreview").style.display = "none";
-  document.getElementById("photoPreview").src = "";
+  const preview = document.getElementById("photoPreview");
+  preview.style.display = "none";
+  preview.src = "";
   document.getElementById("deletePhotoBtn").style.display = "none";
   alert("사진이 삭제되었습니다.");
 }
+
+function handlePhotoClick() {
+  const choice = prompt("사진 옵션을 선택하세요:\n1. 크게 보기\n2. 삭제\n3. 취소", "1");
+  const src = document.getElementById("photoPreview").src;
+  if (choice === "1") {
+    const popup = window.open("", "_blank");
+    popup.document.write(`<img src='${src}' style='max-width:100%;'>`);
+  } else if (choice === "2") {
+    deletePhoto();
+  }
+}
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
