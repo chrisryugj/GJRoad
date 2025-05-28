@@ -213,12 +213,11 @@ tr.status-직접입력 {
 
   <label for="photoInput" style="font-weight: bold;">📸 현장 사진</label>
   <input type="file" id="photoInput" accept="image/*" onchange="savePhoto()">
-  <img id="photoPreview" class="photo-preview" style="display:none;">
+  <img id="photoPreview" class="photo-preview" style="display:none; cursor:pointer;" onclick="handlePhotoClick()">
 <button onclick="deletePhoto()" style="margin-top:5px; display:none;" id="deletePhotoBtn">❌ 사진 삭제</button>
 
   <button onclick="saveMemo()">💾 저장</button>
 </div>
-
   <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
 </div>
  
@@ -284,30 +283,6 @@ tr.status-직접입력 {
   (c) 2025 광진구청 가로경관과 개친절한 류주임
 </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script>
-function deletePhoto() {
-  if (!currentAddress) return;
-  delete photoMap[currentAddress];
-  localStorage.setItem("photoMap", JSON.stringify(photoMap));
-  const preview = document.getElementById("photoPreview");
-  preview.style.display = "none";
-  preview.src = "";
-  document.getElementById("deletePhotoBtn").style.display = "none";
-  alert("사진이 삭제되었습니다.");
-}
-
-function handlePhotoClick() {
-  const choice = prompt("사진 옵션을 선택하세요:\n1. 크게 보기\n2. 삭제\n3. 취소", "1");
-  const src = document.getElementById("photoPreview").src;
-  if (choice === "1") {
-    const popup = window.open("", "_blank");
-    popup.document.write(`<img src='${src}' style='max-width:100%;'>`);
-  } else if (choice === "2") {
-    deletePhoto();
-  }
-}
-</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -323,6 +298,31 @@ let preferredMap = localStorage.getItem("preferredMap") || "naver";
   let memoMode = localStorage.getItem("memoMode") === "true";
   let useAppDefault = localStorage.getItem("useApp") !== "false";
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+function deletePhoto() {
+  if (!currentAddress) return;
+  delete photoMap[currentAddress];
+  localStorage.setItem("photoMap", JSON.stringify(photoMap));
+  const preview = document.getElementById("photoPreview");
+  preview.style.display = "none";
+  preview.src = "";
+  document.getElementById("deletePhotoBtn").style.display = "none";
+  alert("사진이 삭제되었습니다.");
+}
+function handlePhotoClick() {
+  const choice = prompt("사진 옵션을 선택하세요:
+1. 크게 보기
+2. 삭제
+3. 취소", "1");
+  const src = document.getElementById("photoPreview").src;
+  if (choice === "1") {
+    const popup = window.open("", "_blank");
+    popup.document.write(`<img src='${src}' style='max-width:100%;'>`);
+  } else if (choice === "2") {
+    deletePhoto();
+  }
+}
 
 
   function isIOS() {
