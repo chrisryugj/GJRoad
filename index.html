@@ -522,13 +522,16 @@ function uploadToImgur(base64Image, callback) {
 function savePhoto() {
   const input = document.getElementById("photoInput");
   const files = input.files;
-  input.value = ""; 
-  if (!files || !currentAddress) return;
 
+  if (!files || files.length === 0 || !currentAddress) return;
+
+  // 👇 파일 처리 먼저 하고 마지막에 초기화
   if (!Array.isArray(photoMap[currentAddress])) photoMap[currentAddress] = [];
   if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = [];
 
   const urls = photoMap[currentAddress];
+  const originals = originalPhotoMap[currentAddress];
+
   if (urls.length >= 5) {
     alert("사진은 최대 5장까지 등록할 수 있습니다.");
     return;
@@ -538,16 +541,32 @@ function savePhoto() {
     if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
     reader.onload = e => {
-      uploadToImgur(e.target.result).then(imgurUrl => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxW = 800;
+        const scale = maxW / img.width;
+        canvas.width = maxW;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const resized = canvas.toDataURL("image/jpeg", 0.8);
+
         if (photoMap[currentAddress].length >= 5) return;
-        photoMap[currentAddress].push(imgurUrl);
-        originalPhotoMap[currentAddress].push(imgurUrl);
+        photoMap[currentAddress].push(resized);
+        originalPhotoMap[currentAddress].push(e.target.result);
         localStorage.setItem("photoMap", JSON.stringify(photoMap));
         renderPhotos();
-      });
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
+
+  // ✅ 파일 처리 후에 초기화
+  setTimeout(() => {
+    input.value = "";
+  }, 500);
 }
 
 // Imgur 업로드
