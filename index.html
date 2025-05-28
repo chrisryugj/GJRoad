@@ -484,11 +484,15 @@ function savePhoto() {
   const file = fileInput.files[0];
   if (!file || !currentAddress) return;
   if (!photoMap[currentAddress]) photoMap[currentAddress] = [];
+  if (!originalPhotoMap[currentAddress]) originalPhotoMap[currentAddress] = [];
   if (photoMap[currentAddress].length >= 5) return alert("사진은 최대 5장까지 등록할 수 있습니다.");
 
   const reader = new FileReader();
   reader.onload = function(e) {
-    resizeImage(e.target.result, 1024, 1024, function(resizedBase64) {
+    const originalBase64 = e.target.result;
+    originalPhotoMap[currentAddress].push(originalBase64);
+    localStorage.setItem("originalPhotoMap", JSON.stringify(originalPhotoMap));
+    resizeImage(originalBase64, 1024, 1024, function(resizedBase64) {
       uploadToImgur(resizedBase64, function(imgurUrl) {
         photoMap[currentAddress].push(imgurUrl);
         localStorage.setItem("photoMap", JSON.stringify(photoMap));
@@ -565,13 +569,14 @@ function exportText() {
   주소목록.forEach(addr => {
     const status = statusMap[addr] || "미선택";
     const memo = memoMap[addr] || "";
-    const photoList = (photoMap[addr] || []).join("\n");
+    const photoList = (photoMap[addr] || []).map(url => `=HYPERLINK(\"${url}\",\"사진보기\")`).join("\n");
     data.push([addr, status, memo, photoList]);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "출장기록");
   XLSX.writeFile(wb, "출장기록.xlsx");
 }
+  
 function openMapInNewTab() {
   const addr = currentAddress || document.getElementById("addrInput").value.trim();
   if (!addr) return alert("주소를 입력하세요.");
