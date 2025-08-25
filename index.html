@@ -73,6 +73,12 @@
       border-radius: 15px;
     }
     
+    /* Animations */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
     /* Mode Selection Styles */
     .mode-selector {
       display: grid;
@@ -970,6 +976,9 @@ tr.status-직접입력 {
         <div class="card-header">
           <span class="card-icon">🚗</span>
           <h3 class="card-title">출장지 목록</h3>
+          <button class="btn btn-success" onclick="showOptimalRouteModal()" style="margin-left: auto; padding: 8px 16px; font-size: 0.9rem;" title="AI가 최적 경로를 추천합니다">
+            🗺️ 최적경로 추천
+          </button>
         </div>
         <div class="card-content">
           <div id="travel-address-list"></div>
@@ -1050,6 +1059,7 @@ tr.status-직접입력 {
             <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
               <thead>
                 <tr style="background: rgba(27, 60, 130, 0.1); border-bottom: 2px solid #1b3c82;">
+                  <th style="padding: 15px; text-align: center; font-weight: 600; width: 60px;">순서</th>
                   <th style="padding: 15px; text-align: left; font-weight: 600;">주소</th>
                   <th style="padding: 15px; text-align: left; font-weight: 600;">상태</th>
                   <th style="padding: 15px; text-align: left; font-weight: 600;">메모</th>
@@ -1173,6 +1183,57 @@ tr.status-직접입력 {
     </div>
   </div>
   
+  <!-- Optimal Route Modal -->
+  <div id="optimalRouteModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🗺️ 최적경로 추천</div>
+        <div class="modal-subtitle">AI가 가장 효율적인 출장 경로를 추천해드립니다</div>
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 25px;">
+        <label class="form-label">출발지 기준</label>
+        <input type="text" id="startLocation" class="form-input" placeholder="출발지 주소를 입력하세요" value="아차산로 400">
+        <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">
+          📍 현재 위치 또는 자주 출발하는 장소를 입력하세요
+        </div>
+      </div>
+      
+      <div style="background: rgba(79, 172, 254, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 25px;">
+        <div style="font-size: 0.9rem; color: #1b3c82;">
+          <strong>📋 분석할 출장지 (총 <span id="route-address-count">0</span>곳)</strong>
+        </div>
+        <div id="route-address-preview" style="margin-top: 10px; font-size: 0.85rem; color: #666;">
+          <!-- Address list preview will be shown here -->
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 15px; justify-content: center;">
+        <button class="btn btn-success btn-full" onclick="calculateOptimalRoute()" id="calculate-route-btn">
+          🤖 AI 최적경로 계산하기
+        </button>
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+        <button class="btn btn-secondary" onclick="testAPIConnection()" style="font-size: 0.85rem;">
+          🔗 API 연결 테스트
+        </button>
+        <button class="btn btn-secondary" onclick="downloadDebugLogs()" style="font-size: 0.85rem;">
+          📋 로그 다운로드
+        </button>
+        <button class="btn btn-secondary" onclick="closeModal()">
+          취소
+        </button>
+      </div>
+      
+      <!-- Loading indicator -->
+      <div id="route-loading" style="display: none; text-align: center; margin-top: 20px;">
+        <div style="font-size: 2rem; animation: spin 1s linear infinite;">⚙️</div>
+        <div style="margin-top: 10px; color: #666;">AI가 최적경로를 계산중입니다...</div>
+      </div>
+    </div>
+  </div>
+  
   <footer style="text-align: center; padding: 20px; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
     © 2025 광진구청 가로경관과 · 진출로 v2.0
   </footer>
@@ -1217,7 +1278,10 @@ function selectMode(mode) {
   if (mode === 'travel') {
     updateTravelMode();
   } else if (mode === 'summary') {
-    updateSummaryMode();
+    // Add small delay to ensure DOM is ready
+    setTimeout(() => {
+      updateSummaryMode();
+    }, 100);
   } else if (mode === 'prepare') {
     // Show selected map app if exists
     updateMapSelection();
@@ -1400,14 +1464,19 @@ function updateAddressPreview() {
     return;
   }
   
-  container.innerHTML = 주소목록.map(addr => {
+  container.innerHTML = 주소목록.map((addr, index) => {
     const status = statusMap[addr] || '미선택';
     const statusClass = status === '출장완료' ? 'completed' : status === '미출장' ? 'pending' : 'none';
     
     return `
       <div class="address-card ${status === '출장완료' ? 'completed' : status === '미출장' ? 'pending' : ''}">
         <div class="address-title">
-          <span>${addr}</span>
+          <span>
+            <span style="display: inline-block; width: 25px; height: 25px; background: #1b3c82; color: white; border-radius: 50%; text-align: center; line-height: 25px; font-weight: bold; margin-right: 10px; font-size: 0.8rem;">
+              ${index + 1}
+            </span>
+            ${addr}
+          </span>
           <span class="address-status status-${statusClass}">${status}</span>
         </div>
       </div>
@@ -1425,14 +1494,19 @@ function updateTravelMode() {
     return;
   }
   
-  container.innerHTML = 주소목록.map(addr => {
+  container.innerHTML = 주소목록.map((addr, index) => {
     const status = statusMap[addr] || '미선택';
     const statusClass = status === '출장완료' ? 'completed' : status === '미출장' ? 'pending' : 'none';
     
     return `
       <div class="address-card ${status === '출장완료' ? 'completed' : status === '미출장' ? 'pending' : ''}" onclick="openAddressActions('${addr}')">
         <div class="address-title">
-          <span style="font-size: 1.1rem;">${addr}</span>
+          <span style="font-size: 1.1rem;">
+            <span style="display: inline-block; width: 30px; height: 30px; background: #1b3c82; color: white; border-radius: 50%; text-align: center; line-height: 30px; font-weight: bold; margin-right: 10px; font-size: 0.9rem;">
+              ${index + 1}
+            </span>
+            ${addr}
+          </span>
           <span class="address-status status-${statusClass}">${status}</span>
         </div>
         <div style="margin-top: 10px; display: flex; gap: 10px;">
@@ -1686,7 +1760,7 @@ function updateTable() {
   if (!tbody) return;
   
   tbody.innerHTML = '';
-  주소목록.forEach(addr => {
+  주소목록.forEach((addr, index) => {
     const rawStatus = statusMap[addr] || '미선택';
     const classStatus = ['출장완료', '미출장', '미선택'].includes(rawStatus) ? rawStatus : '직접입력';
     const memo = memoMap[addr] || '-';
@@ -1696,6 +1770,11 @@ function updateTable() {
     const row = document.createElement('tr');
     row.style.cssText = getStatusRowStyle(classStatus);
     row.innerHTML = `
+      <td style="padding: 15px; border-bottom: 1px solid #e1e5e9; text-align: center;">
+        <span style="display: inline-block; width: 25px; height: 25px; background: #1b3c82; color: white; border-radius: 50%; text-align: center; line-height: 25px; font-weight: bold; font-size: 0.8rem;">
+          ${index + 1}
+        </span>
+      </td>
       <td style="padding: 15px; border-bottom: 1px solid #e1e5e9;">${addr}</td>
       <td style="padding: 15px; border-bottom: 1px solid #e1e5e9;">${rawStatus}</td>
       <td style="padding: 15px; border-bottom: 1px solid #e1e5e9; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${memo}">${memo}</td>
@@ -1788,12 +1867,12 @@ function drawChart() {
 }
 
 function copyTable() {
-  let text = '주소\t상태\t메모\t사진개수\n';
-  주소목록.forEach(addr => {
+  let text = '순서\t주소\t상태\t메모\t사진개수\n';
+  주소목록.forEach((addr, index) => {
     const status = statusMap[addr] || '미선택';
     const memo = (memoMap[addr] || '').replace(/\n/g, ' ');
     const photoCount = Array.isArray(photoMap[addr]) ? photoMap[addr].length : 0;
-    text += addr + '\t' + status + '\t' + memo + '\t' + photoCount + '\n';
+    text += (index + 1) + '\t' + addr + '\t' + status + '\t' + memo + '\t' + photoCount + '\n';
   });
   navigator.clipboard.writeText(text).then(() => alert('복사 완료'));
 }
@@ -1823,14 +1902,14 @@ function exportText() {
 
 function exportExcel() {
   const wb = XLSX.utils.book_new();
-  const data = [['주소', '상태', '메모', '사진1', '사진2', '사진3', '사진4', '사진5']];
-  주소목록.forEach(addr => {
+  const data = [['순서', '주소', '상태', '메모', '사진1', '사진2', '사진3', '사진4', '사진5']];
+  주소목록.forEach((addr, index) => {
     const status = statusMap[addr] || '미선택';
     const memo = memoMap[addr] || '';
     const photos = Array.isArray(photoMap[addr]) ? photoMap[addr] : [];
     const limitedMemo = memo.length > 10000 ? memo.slice(0, 10000) + '...' : memo;
-    const row = [addr, status, limitedMemo, ...photos.slice(0, 5)];
-    while (row.length < 8) row.push('');
+    const row = [index + 1, addr, status, limitedMemo, ...photos.slice(0, 5)];
+    while (row.length < 9) row.push('');
     data.push(row);
   });
   const ws = XLSX.utils.aoa_to_sheet(data);
@@ -1838,7 +1917,7 @@ function exportExcel() {
   // 사진 링크 셀에 하이퍼링크 추가
   data.forEach((row, rowIndex) => {
     if (rowIndex === 0) return;
-    for (let i = 3; i <= 7; i++) {
+    for (let i = 4; i <= 8; i++) {
       const cellAddr = XLSX.utils.encode_cell({ r: rowIndex, c: i });
       const val = row[i];
       if (val && typeof val === 'string') {
@@ -1959,6 +2038,517 @@ function uploadToImgur(base64Image) {
       throw new Error('Imgur 업로드 실패');
     }
   });
+}
+
+// Optimal Route Variables
+const GEMINI_API_KEY = 'AIzaSyB39d0FJHlO8NzvQaowq9zHNyE1uKgSrJQ';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+
+// Debug Log System
+let debugLogs = [];
+function addDebugLog(message, data = null) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    message,
+    data: data ? JSON.stringify(data, null, 2) : null
+  };
+  debugLogs.push(logEntry);
+  console.log(`[DEBUG ${timestamp}] ${message}`, data);
+  
+  // Keep only last 100 logs
+  if (debugLogs.length > 100) {
+    debugLogs = debugLogs.slice(-100);
+  }
+}
+
+function downloadDebugLogs() {
+  const logContent = debugLogs.map(log => {
+    let entry = `[${log.timestamp}] ${log.message}`;
+    if (log.data) {
+      entry += `\n${log.data}`;
+    }
+    return entry;
+  }).join('\n\n' + '='.repeat(50) + '\n\n');
+  
+  const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `debug_log_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.txt`;
+  link.click();
+}
+
+// Optimal Route Functions
+function showOptimalRouteModal() {
+  if (주소목록.length < 2) {
+    alert('최적경로 추천을 위해서는 최소 2곳 이상의 출장지가 필요합니다.');
+    return;
+  }
+  
+  // Update address count and preview
+  document.getElementById('route-address-count').textContent = 주소목록.length;
+  const preview = document.getElementById('route-address-preview');
+  preview.innerHTML = 주소목록.slice(0, 5).map(addr => `• ${addr}`).join('<br>') + 
+    (주소목록.length > 5 ? `<br>• ... 외 ${주소목록.length - 5}곳` : '');
+  
+  document.getElementById('optimalRouteModal').classList.add('show');
+}
+
+async function calculateOptimalRoute() {
+  addDebugLog('=== 최적경로 계산 시작 ===');
+  
+  const startLocation = document.getElementById('startLocation').value.trim();
+  addDebugLog('출발지 입력값', { startLocation });
+  addDebugLog('현재 주소목록', { addresses: 주소목록, count: 주소목록.length });
+  
+  if (!startLocation) {
+    addDebugLog('오류: 출발지가 비어있음');
+    alert('출발지를 입력해주세요.');
+    return;
+  }
+  
+  if (주소목록.length < 2) {
+    addDebugLog('오류: 주소가 2개 미만', { count: 주소목록.length });
+    alert('경로 최적화를 위해서는 최소 2곳 이상의 출장지가 필요합니다.');
+    return;
+  }
+  
+  // Show loading
+  addDebugLog('로딩 UI 표시');
+  document.getElementById('route-loading').style.display = 'block';
+  document.getElementById('calculate-route-btn').disabled = true;
+  document.getElementById('calculate-route-btn').textContent = '계산중...';
+  
+  try {
+    addDebugLog('Gemini API 호출 시작', { startLocation, destinationCount: 주소목록.length });
+    const optimalOrder = await getOptimalRouteFromGemini(startLocation, 주소목록);
+    addDebugLog('Gemini API 응답 받음', { optimalOrder });
+    
+    if (optimalOrder && optimalOrder.length > 0) {
+      addDebugLog('최적 순서 적용 시작', { originalOrder: 주소목록, optimalOrder });
+      
+      // Reorder the address list based on optimal route
+      const newOrder = [];
+      optimalOrder.forEach((index, i) => {
+        addDebugLog(`순서 ${i}: 인덱스 ${index} 처리 중`);
+        if (index >= 0 && index < 주소목록.length) {
+          newOrder.push(주소목록[index]);
+          addDebugLog(`추가됨: ${주소목록[index]}`);
+        } else {
+          addDebugLog(`경고: 잘못된 인덱스 ${index} (범위: 0-${주소목록.length-1})`);
+        }
+      });
+      
+      // Add any missing addresses
+      주소목록.forEach(addr => {
+        if (!newOrder.includes(addr)) {
+          addDebugLog(`누락된 주소 추가: ${addr}`);
+          newOrder.push(addr);
+        }
+      });
+      
+      addDebugLog('최종 새 순서', { newOrder });
+      주소목록 = newOrder;
+      saveAddressList();
+      addDebugLog('주소목록 저장 완료');
+      
+      // Update UI
+      updateTravelMode();
+      updateAddressPreview();
+      addDebugLog('UI 업데이트 완료');
+      
+      closeModal();
+      alert('✅ 최적경로로 출장지 순서가 재정렬되었습니다!');
+      addDebugLog('=== 최적경로 계산 성공 완료 ===');
+    } else {
+      addDebugLog('오류: 빈 최적순서 결과', { optimalOrder });
+      throw new Error('경로 최적화 결과를 받을 수 없습니다.');
+    }
+  } catch (error) {
+    addDebugLog('최적경로 계산 중 오류 발생', { 
+      error: error.message, 
+      stack: error.stack,
+      name: error.name
+    });
+    console.error('Optimal route calculation failed:', error);
+    
+    // Try fallback simple algorithm
+    addDebugLog('Fallback 알고리즘 시도');
+    try {
+      const simpleOrder = getSimpleFallbackOrder(주소목록);
+      addDebugLog('Fallback 알고리즘 결과', { simpleOrder });
+      
+      if (simpleOrder && simpleOrder.length > 0) {
+        const newOrder = [];
+        simpleOrder.forEach(index => {
+          if (index >= 0 && index < 주소목록.length) {
+            newOrder.push(주소목록[index]);
+          }
+        });
+        
+        주소목록 = newOrder.length > 0 ? newOrder : 주소목록;
+        saveAddressList();
+        updateTravelMode();
+        updateAddressPreview();
+        closeModal();
+        
+        alert('⚠️ AI 최적경로 계산에 실패했지만, 간단한 알고리즘으로 순서를 재정렬했습니다.');
+        addDebugLog('Fallback 알고리즘 성공');
+        return; // Exit early on fallback success
+      }
+    } catch (fallbackError) {
+      addDebugLog('Fallback 알고리즘도 실패', { error: fallbackError.message });
+    }
+    
+    // Download debug logs automatically on error
+    setTimeout(() => {
+      if (confirm('오류가 발생했습니다. 디버그 로그를 다운로드하시겠습니까?')) {
+        downloadDebugLogs();
+      }
+    }, 500);
+    
+    alert('❌ 최적경로 계산 중 오류가 발생했습니다. 다시 시도해주세요.\n콘솔(F12)에서 자세한 오류 정보를 확인할 수 있습니다.');
+  } finally {
+    // Hide loading
+    addDebugLog('로딩 UI 숨김');
+    document.getElementById('route-loading').style.display = 'none';
+    document.getElementById('calculate-route-btn').disabled = false;
+    document.getElementById('calculate-route-btn').textContent = '🤖 AI 최적경로 계산하기';
+  }
+}
+
+async function getOptimalRouteFromGemini(startLocation, destinations) {
+  addDebugLog('Gemini API 함수 시작', { startLocation, destinations });
+  
+  const prompt = `
+출발지: ${startLocation}
+목적지들: ${destinations.map((addr, i) => `${i}. ${addr}`).join('\n')}
+
+위 출발지에서 시작해서 모든 목적지를 방문하는 최적 경로를 찾아주세요.
+이동 거리와 시간을 최소화하는 순서로 목적지 번호만 반환해주세요.
+
+응답 형식: [0,1,2,3,4] (목적지 번호 배열만)
+설명이나 다른 텍스트 없이 JSON 배열만 반환해주세요.
+`;
+
+  addDebugLog('생성된 프롬프트', { prompt });
+
+  const requestBody = {
+    contents: [{
+      parts: [{
+        text: prompt
+      }]
+    }]
+  };
+
+  addDebugLog('API 요청 바디', { requestBody });
+  addDebugLog('API URL 및 키 정보', { 
+    url: `${GEMINI_API_URL}?key=${GEMINI_API_KEY.substring(0, 10)}...`,
+    keyLength: GEMINI_API_KEY.length 
+  });
+
+  try {
+    addDebugLog('fetch 요청 시작');
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(requestBody),
+      mode: 'cors'
+    });
+
+    addDebugLog('fetch 응답 받음', { 
+      status: response.status, 
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      addDebugLog('API 요청 실패 - 응답 내용', { status: response.status, errorText });
+      throw new Error(`API request failed: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    addDebugLog('API 응답 JSON 파싱 완료', { data });
+    
+    // Handle both old and new API response structures
+    let text = '';
+    if (data.candidates && data.candidates[0]) {
+      if (data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+        // New API structure
+        text = data.candidates[0].content.parts[0].text.trim();
+        addDebugLog('새 API 구조로 텍스트 추출', { text });
+      } else if (data.candidates[0].parts && data.candidates[0].parts[0]) {
+        // Old API structure
+        text = data.candidates[0].parts[0].text.trim();
+        addDebugLog('구 API 구조로 텍스트 추출', { text });
+      } else {
+        addDebugLog('API 응답 구조 오류', { data });
+        throw new Error('Invalid API response structure - no text found');
+      }
+    } else {
+      addDebugLog('API 응답 구조 오류 - candidates 없음', { data });
+      throw new Error('Invalid API response structure - no candidates');
+    }
+    addDebugLog('추출된 텍스트 응답', { text });
+    
+    try {
+      // Remove any markdown code block formatting
+      let cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      addDebugLog('정리된 텍스트', { cleanText });
+      
+      // Extract JSON array from response
+      const match = cleanText.match(/\[[\d,\s]+\]/);
+      addDebugLog('정규식 매칭 결과', { match, originalText: text, cleanText });
+      
+      if (match) {
+        const optimalOrder = JSON.parse(match[0]);
+        addDebugLog('파싱된 최적 순서', { optimalOrder });
+        
+        // Validate the result
+        if (!Array.isArray(optimalOrder)) {
+          throw new Error('Result is not an array');
+        }
+        
+        if (optimalOrder.length === 0) {
+          throw new Error('Empty result array');
+        }
+        
+        // Check if all indices are valid
+        const invalidIndices = optimalOrder.filter(idx => 
+          typeof idx !== 'number' || idx < 0 || idx >= destinations.length
+        );
+        
+        if (invalidIndices.length > 0) {
+          addDebugLog('잘못된 인덱스 발견', { invalidIndices, validRange: `0-${destinations.length-1}` });
+        }
+        
+        return optimalOrder;
+      } else {
+        addDebugLog('JSON 배열 패턴을 찾을 수 없음', { text });
+        throw new Error('Invalid response format - no JSON array found');
+      }
+    } catch (parseError) {
+      addDebugLog('응답 파싱 오류', { 
+        error: parseError.message, 
+        rawText: text 
+      });
+      throw parseError;
+    }
+  } catch (fetchError) {
+    addDebugLog('Fetch 오류', { 
+      error: fetchError.message, 
+      stack: fetchError.stack 
+    });
+    throw fetchError;
+  }
+}
+
+// Simple fallback route optimization algorithm
+function getSimpleFallbackOrder(destinations) {
+  addDebugLog('간단한 fallback 알고리즘 시작', { destinations });
+  
+  if (!destinations || destinations.length === 0) {
+    return [];
+  }
+  
+  if (destinations.length === 1) {
+    return [0];
+  }
+  
+  // Simple strategy: try to group similar addresses by area/district
+  const result = [];
+  const used = new Set();
+  
+  // Start with first address
+  result.push(0);
+  used.add(0);
+  
+  // Greedy approach: find addresses that seem "closest" by text similarity
+  while (result.length < destinations.length) {
+    let bestMatch = -1;
+    let bestScore = -1;
+    
+    const lastAddr = destinations[result[result.length - 1]];
+    
+    for (let i = 0; i < destinations.length; i++) {
+      if (used.has(i)) continue;
+      
+      const currentAddr = destinations[i];
+      const score = calculateAddressSimilarity(lastAddr, currentAddr);
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = i;
+      }
+    }
+    
+    if (bestMatch !== -1) {
+      result.push(bestMatch);
+      used.add(bestMatch);
+    } else {
+      // Add any remaining addresses
+      for (let i = 0; i < destinations.length; i++) {
+        if (!used.has(i)) {
+          result.push(i);
+          used.add(i);
+          break;
+        }
+      }
+    }
+  }
+  
+  addDebugLog('Fallback 알고리즘 완료', { result });
+  return result;
+}
+
+function calculateAddressSimilarity(addr1, addr2) {
+  // Simple text-based similarity for Korean addresses
+  const words1 = addr1.replace(/\d+/g, '').split(/\s+/).filter(w => w.length > 0);
+  const words2 = addr2.replace(/\d+/g, '').split(/\s+/).filter(w => w.length > 0);
+  
+  let commonWords = 0;
+  for (const word1 of words1) {
+    if (words2.some(word2 => word2.includes(word1) || word1.includes(word2))) {
+      commonWords++;
+    }
+  }
+  
+  return commonWords / Math.max(words1.length, words2.length, 1);
+}
+
+// API Connection Test
+async function testAPIConnection() {
+  addDebugLog('=== API 연결 테스트 시작 ===');
+  
+  // First, try to list available models
+  try {
+    addDebugLog('사용 가능한 모델 목록 요청 시작');
+    const listModelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
+    const listResponse = await fetch(listModelsUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      },
+      mode: 'cors'
+    });
+    
+    if (listResponse.ok) {
+      const listData = await listResponse.json();
+      addDebugLog('사용 가능한 모델 목록', { models: listData.models?.slice(0, 10) }); // Only log first 10
+      
+      // Find a suitable model for generateContent
+      const suitableModel = listData.models?.find(model => 
+        model.name.includes('gemini') && 
+        model.supportedGenerationMethods?.includes('generateContent')
+      );
+      
+      if (suitableModel) {
+        addDebugLog('적합한 모델 발견', { modelName: suitableModel.name });
+        // Update the API URL with the found model
+        const modelName = suitableModel.name.replace('models/', '');
+        const newUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+        addDebugLog('새 API URL 생성', { newUrl, originalUrl: GEMINI_API_URL });
+        
+        // Test with the found model
+        const testResult = await testWithSpecificModel(newUrl);
+        return testResult;
+      }
+    }
+  } catch (listError) {
+    addDebugLog('모델 목록 조회 실패', { error: listError.message });
+  }
+  
+  // If model listing fails, try with current URL
+  addDebugLog('기본 모델로 테스트 시도', { url: GEMINI_API_URL });
+  return await testWithSpecificModel(GEMINI_API_URL);
+}
+
+async function testWithSpecificModel(apiUrl) {
+  const testRequestBody = {
+    contents: [{
+      parts: [{
+        text: "Hello! Please respond with just the number: 123"
+      }]
+    }]
+  };
+  
+  try {
+    addDebugLog('특정 모델 테스트 API 요청 시작', { apiUrl, testRequestBody });
+    
+    const response = await fetch(`${apiUrl}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(testRequestBody),
+      mode: 'cors'
+    });
+    
+    addDebugLog('특정 모델 테스트 응답 받음', { 
+      status: response.status, 
+      statusText: response.statusText,
+      ok: response.ok 
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      addDebugLog('특정 모델 테스트 API 요청 실패', { status: response.status, errorText });
+      alert(`❌ API 연결 실패!\n모델: ${apiUrl}\n상태: ${response.status}\n오류: ${errorText}`);
+      return false;
+    }
+    
+    const data = await response.json();
+    addDebugLog('특정 모델 테스트 응답 데이터', { data });
+    
+    // Handle both old and new API response structures for test
+    let responseText = '';
+    if (data.candidates && data.candidates[0]) {
+      if (data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+        // New API structure
+        responseText = data.candidates[0].content.parts[0].text;
+        addDebugLog('특정 모델 테스트 응답 텍스트 (새 구조)', { responseText });
+      } else if (data.candidates[0].parts && data.candidates[0].parts[0]) {
+        // Old API structure
+        responseText = data.candidates[0].parts[0].text;
+        addDebugLog('특정 모델 테스트 응답 텍스트 (구 구조)', { responseText });
+      } else {
+        addDebugLog('특정 모델 테스트 응답 구조 오류', { data });
+        alert('⚠️ API는 연결되었지만 응답 구조가 예상과 다릅니다.');
+        return false;
+      }
+      
+      alert(`✅ API 연결 성공!\n모델: ${apiUrl}\n응답: ${responseText}`);
+      
+      // Update global URL if this works and it's different
+      if (apiUrl !== GEMINI_API_URL) {
+        addDebugLog('전역 API URL 업데이트 필요', { newUrl: apiUrl });
+        // We can't update const, but we can log the working URL
+        alert(`💡 이 모델이 작동합니다: ${apiUrl}\n\n개발자에게 이 정보를 알려주세요!`);
+      }
+      
+      return true;
+    } else {
+      addDebugLog('특정 모델 테스트 응답 구조 오류 - candidates 없음', { data });
+      alert('⚠️ API는 연결되었지만 응답 구조가 예상과 다릅니다.');
+      return false;
+    }
+    
+  } catch (error) {
+    addDebugLog('특정 모델 테스트 API 연결 오류', { 
+      error: error.message, 
+      stack: error.stack 
+    });
+    alert(`❌ API 연결 테스트 실패!\n모델: ${apiUrl}\n오류: ${error.message}`);
+    return false;
+  } finally {
+    addDebugLog('=== 특정 모델 API 연결 테스트 완료 ===');
+  }
 }
 
 // Initialize app on page load
@@ -2158,8 +2748,6 @@ function showDropdown() {} // No longer used
 function handleStatusChange() {} // Replaced by handleRecordStatusChange
 function saveStatus() {} // Replaced by saveRecord
 function openMapInNewTab() {} // Replaced by openMapForAddress
-function updateTable() {} // Moved to updateSummaryMode
-function drawChart() {} // Moved to updateSummaryMode
 
 
 </script>
