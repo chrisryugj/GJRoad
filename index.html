@@ -42,6 +42,12 @@
       font-weight: 700;
       color: #1b3c82;
       margin-bottom: 5px;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    
+    .app-title:hover {
+      color: #4facfe;
     }
     
     .app-subtitle {
@@ -542,7 +548,27 @@
       }
       
       .mode-selector {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 8px;
+      }
+      
+      .mode-card {
+        padding: 12px 8px;
+        text-align: center;
+      }
+      
+      .mode-icon {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+      }
+      
+      .mode-title {
+        font-size: 0.85rem;
+        margin-bottom: 0;
+      }
+      
+      .mode-desc {
+        display: none;
       }
       
       .card {
@@ -556,11 +582,38 @@
       .btn {
         padding: 12px 20px;
       }
+      
+      .map-button-selector {
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 10px !important;
+      }
+      
+      .map-option {
+        padding: 15px 10px !important;
+      }
+      
+      .map-name {
+        font-size: 0.85rem !important;
+      }
     }
     
     @media (max-width: 480px) {
       .mode-selector {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 6px;
+      }
+      
+      .mode-card {
+        padding: 10px 6px;
+      }
+      
+      .mode-icon {
+        font-size: 1.5rem;
+        margin-bottom: 3px;
+      }
+      
+      .mode-title {
+        font-size: 0.75rem;
       }
       
       .step-indicator {
@@ -723,13 +776,8 @@ tr.status-직접입력 {
   <div class="app-container">
     <!-- App Header -->
     <div class="app-header">
-      <div class="app-title">진출로 (進出路)</div>
+      <div class="app-title" onclick="goHome()">진출로 (進出路)</div>
       <div class="app-subtitle">출장길 스마트 도우미</div>
-      
-      <!-- Banner -->
-      <div class="app-banner">
-        <img src="https://chrisryugj.github.io/GJRoad/images/ban.png" alt="진출로 배너" class="banner-image">
-      </div>
       
       <!-- Data Management Options -->
       <div id="data-management" class="data-management" style="margin: 20px 0;">
@@ -793,7 +841,7 @@ tr.status-직접입력 {
             <label class="form-label">사용할 지도 앱을 선택하세요</label>
             
             <!-- Map Selection Buttons -->
-            <div class="map-selector" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <div class="map-selector map-button-selector" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 20px;">
               <button class="map-option" data-map="naver" onclick="selectMapApp('naver')">
                 <div class="map-icon">
                   <img src="https://chrisryugj.github.io/GJRoad/images/nmap.jpg" alt="네이버지도">
@@ -839,70 +887,49 @@ tr.status-직접입력 {
         </div>
       </div>
       
-      <!-- Step 2: Address Input Method -->
+      <!-- Step 2: Address Input -->
       <div class="card" id="step-input" style="display: none;">
         <div class="card-header">
           <span class="card-icon">🏠</span>
-          <h3 class="card-title">2단계: 출장지 입력 방식 선택</h3>
+          <h3 class="card-title">2단계: 출장지 입력</h3>
         </div>
         <div class="card-content">
-          <div style="display: grid; gap: 15px;">
-            <button class="btn btn-primary" onclick="showAddressInput('single')">
-              📝 개별 입력
-            </button>
-            <button class="btn btn-secondary" onclick="showAddressInput('file')">
-              📁 파일 업로드
-            </button>
-            <button class="btn btn-secondary" onclick="showAddressInput('bulk')">
-              📋 일괄 붙여넣기
+          <!-- Default: Single Address Input -->
+          <div class="form-group">
+            <label class="form-label">개별 입력</label>
+            <input type="text" id="singleAddress" class="form-input" placeholder="주소를 입력하세요">
+            <button class="btn btn-success btn-full" onclick="addSingleAddress()" style="margin-top: 10px;">
+              ➕ 출장지 추가
             </button>
           </div>
-        </div>
-      </div>
-      
-      <!-- Address Input Forms -->
-      <div id="address-input-forms" style="display: none;">
-        <!-- Single Address Input -->
-        <div class="card" id="single-input" style="display: none;">
-          <div class="card-header">
-            <span class="card-icon">📝</span>
-            <h3 class="card-title">출장지 개별 입력</h3>
-          </div>
-          <div class="card-content">
-            <div class="form-group">
-              <input type="text" id="singleAddress" class="form-input" placeholder="주소를 입력하세요">
-              <button class="btn btn-success btn-full" onclick="addSingleAddress()" style="margin-top: 10px;">
-                ➕ 출장지 추가
+          <div id="added-addresses" class="form-group"></div>
+          <button class="btn btn-primary btn-full" onclick="completeAddressInput()" style="display: none;" id="complete-btn">
+            ✓ 입력 완료
+          </button>
+          
+          <!-- Alternative Methods -->
+          <div style="margin-top: 30px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
+            <div class="form-label" style="margin-bottom: 15px;">다른 입력 방법</div>
+            <div style="display: grid; gap: 10px;">
+              <button class="btn btn-secondary" onclick="toggleInputMethod('file')">
+                📁 파일 업로드
+              </button>
+              <button class="btn btn-secondary" onclick="toggleInputMethod('bulk')">
+                📋 일괄 붙여넣기
               </button>
             </div>
-            <div id="added-addresses" class="form-group"></div>
-            <button class="btn btn-primary btn-full" onclick="completeAddressInput()" style="display: none;" id="complete-btn">
-              ✓ 입력 완료
-            </button>
           </div>
-        </div>
-        
-        <!-- File Upload -->
-        <div class="card" id="file-input" style="display: none;">
-          <div class="card-header">
-            <span class="card-icon">📁</span>
-            <h3 class="card-title">출장지 파일 업로드</h3>
-          </div>
-          <div class="card-content">
+          
+          <!-- File Upload (Hidden by default) -->
+          <div id="file-input-section" style="display: none; margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.05); border-radius: 12px;">
             <div class="form-group">
               <label class="form-label">TXT 또는 CSV 파일을 선택하세요</label>
               <input type="file" id="fileUpload" class="form-input" accept=".txt,.csv" onchange="loadAddressFile(event)">
             </div>
           </div>
-        </div>
-        
-        <!-- Bulk Paste -->
-        <div class="card" id="bulk-input" style="display: none;">
-          <div class="card-header">
-            <span class="card-icon">📋</span>
-            <h3 class="card-title">출장지 일괄 입력</h3>
-          </div>
-          <div class="card-content">
+          
+          <!-- Bulk Paste (Hidden by default) -->
+          <div id="bulk-input-section" style="display: none; margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.05); border-radius: 12px;">
             <div class="form-group">
               <label class="form-label">주소를 줄 단위로 붙여넣어 주세요</label>
               <textarea id="bulkPaste" class="form-textarea" placeholder="예:
@@ -1015,7 +1042,7 @@ tr.status-직접입력 {
             <button class="btn btn-secondary" onclick="exportText()">
               📁 텍스트 다운로드
             </button>
-            <button class="btn btn-success" onclick="exportText()">
+            <button class="btn btn-success" onclick="exportExcel()">
               📅 엑셀로 다운로드
             </button>
           </div>
@@ -1025,6 +1052,8 @@ tr.status-직접입력 {
                 <tr style="background: rgba(27, 60, 130, 0.1); border-bottom: 2px solid #1b3c82;">
                   <th style="padding: 15px; text-align: left; font-weight: 600;">주소</th>
                   <th style="padding: 15px; text-align: left; font-weight: 600;">상태</th>
+                  <th style="padding: 15px; text-align: left; font-weight: 600;">메모</th>
+                  <th style="padding: 15px; text-align: left; font-weight: 600;">사진</th>
                 </tr>
               </thead>
               <tbody id="tableBody"></tbody>
@@ -1195,6 +1224,26 @@ function selectMode(mode) {
   }
 }
 
+function goHome() {
+  // Reset to initial prepare mode state
+  AppState.currentStep = 1;
+  AppState.currentAddress = null;
+  
+  selectMode('prepare');
+  
+  // Reset step indicator
+  updateStepIndicator();
+  
+  // Show step 1, hide others
+  document.getElementById('step-map').style.display = 'block';
+  document.getElementById('step-input').style.display = 'none';
+  document.getElementById('step-preview').style.display = 'none';
+  
+  // Hide input sections
+  document.getElementById('file-input-section').style.display = 'none';
+  document.getElementById('bulk-input-section').style.display = 'none';
+}
+
 // Map Selection Functions
 function selectMapApp(mapType) {
   preferredMap = mapType;
@@ -1269,17 +1318,20 @@ function updateStepIndicator() {
 }
 
 // Address Input Methods
-function showAddressInput(method) {
-  AppState.inputMethod = method;
-  document.getElementById('address-input-forms').style.display = 'block';
+function toggleInputMethod(method) {
+  const fileSection = document.getElementById('file-input-section');
+  const bulkSection = document.getElementById('bulk-input-section');
   
-  // Hide all input forms first
-  document.getElementById('single-input').style.display = 'none';
-  document.getElementById('file-input').style.display = 'none';
-  document.getElementById('bulk-input').style.display = 'none';
+  // Hide all sections first
+  fileSection.style.display = 'none';
+  bulkSection.style.display = 'none';
   
-  // Show selected form
-  document.getElementById(`${method}-input`).style.display = 'block';
+  // Show selected section
+  if (method === 'file') {
+    fileSection.style.display = 'block';
+  } else if (method === 'bulk') {
+    bulkSection.style.display = 'block';
+  }
 }
 
 function addSingleAddress() {
@@ -1400,16 +1452,38 @@ function openMapForAddress(address) {
   const baseAddr = address.replace(/\s*\([^)]*\)\s*$/, '').trim();
   const encodedAddr = encodeURIComponent(baseAddr);
   
-  let url = '';
+  let appUrl = '';
+  let webUrl = '';
+  
   if (preferredMap === 'naver') {
-    url = `https://map.naver.com/v5/search/${encodedAddr}`;
+    appUrl = `nmap://search?query=${encodedAddr}`;
+    webUrl = `https://map.naver.com/v5/search/${encodedAddr}`;
   } else if (preferredMap === 'kakao') {
-    url = `https://map.kakao.com/?q=${encodedAddr}`;
+    appUrl = `kakaomap://search?q=${encodedAddr}`;
+    webUrl = `https://map.kakao.com/?q=${encodedAddr}`;
   } else if (preferredMap === 'google') {
-    url = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
+    appUrl = `comgooglemaps://?q=${encodedAddr}`;
+    webUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
   }
   
-  window.open(url, '_blank');
+  // Try to open mobile app first, fallback to web
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  if (isMobile && appUrl) {
+    // Create invisible iframe to test app availability
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = appUrl;
+    document.body.appendChild(iframe);
+    
+    // Fallback to web after short delay
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      window.open(webUrl, '_blank');
+    }, 1000);
+  } else {
+    window.open(webUrl, '_blank');
+  }
   
   // Mark as viewed
   viewedAddresses.add(address);
@@ -1615,12 +1689,17 @@ function updateTable() {
   주소목록.forEach(addr => {
     const rawStatus = statusMap[addr] || '미선택';
     const classStatus = ['출장완료', '미출장', '미선택'].includes(rawStatus) ? rawStatus : '직접입력';
+    const memo = memoMap[addr] || '-';
+    const photos = Array.isArray(photoMap[addr]) ? photoMap[addr] : [];
+    const photoCount = photos.length > 0 ? `📷 ${photos.length}장` : '-';
     
     const row = document.createElement('tr');
     row.style.cssText = getStatusRowStyle(classStatus);
     row.innerHTML = `
       <td style="padding: 15px; border-bottom: 1px solid #e1e5e9;">${addr}</td>
       <td style="padding: 15px; border-bottom: 1px solid #e1e5e9;">${rawStatus}</td>
+      <td style="padding: 15px; border-bottom: 1px solid #e1e5e9; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${memo}">${memo}</td>
+      <td style="padding: 15px; border-bottom: 1px solid #e1e5e9;">${photoCount}</td>
     `;
     tbody.appendChild(row);
   });
@@ -1709,16 +1788,40 @@ function drawChart() {
 }
 
 function copyTable() {
-  let text = '주소\t상태\n';
+  let text = '주소\t상태\t메모\t사진개수\n';
   주소목록.forEach(addr => {
     const status = statusMap[addr] || '미선택';
-    text += addr + '\t' + status + '\n';
+    const memo = (memoMap[addr] || '').replace(/\n/g, ' ');
+    const photoCount = Array.isArray(photoMap[addr]) ? photoMap[addr].length : 0;
+    text += addr + '\t' + status + '\t' + memo + '\t' + photoCount + '\n';
   });
   navigator.clipboard.writeText(text).then(() => alert('복사 완료'));
 }
 
-  
 function exportText() {
+  let content = '출장 기록 - 텍스트 버전\n';
+  content += '='.repeat(50) + '\n\n';
+  
+  주소목록.forEach((addr, index) => {
+    const status = statusMap[addr] || '미선택';
+    const memo = memoMap[addr] || '기록 없음';
+    const photoCount = Array.isArray(photoMap[addr]) ? photoMap[addr].length : 0;
+    
+    content += `${index + 1}. ${addr}\n`;
+    content += `   상태: ${status}\n`;
+    content += `   메모: ${memo}\n`;
+    content += `   사진: ${photoCount}장\n`;
+    content += '-'.repeat(30) + '\n';
+  });
+  
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = '출장기록.txt';
+  link.click();
+}
+
+function exportExcel() {
   const wb = XLSX.utils.book_new();
   const data = [['주소', '상태', '메모', '사진1', '사진2', '사진3', '사진4', '사진5']];
   주소목록.forEach(addr => {
