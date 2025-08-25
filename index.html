@@ -1214,6 +1214,15 @@ tr.status-직접입력 {
         </button>
       </div>
       
+      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+        <button class="btn btn-secondary" onclick="compareRouteAlgorithms()" style="font-size: 0.85rem;">
+          🔍 알고리즘 비교
+        </button>
+        <button class="btn btn-secondary" onclick="showManualRouteEditor()" style="font-size: 0.85rem;">
+          ✏️ 수동 편집
+        </button>
+      </div>
+      
       <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
         <button class="btn btn-secondary" onclick="testAPIConnection()" style="font-size: 0.85rem;">
           🔗 API 연결 테스트
@@ -2220,16 +2229,23 @@ async function calculateOptimalRoute() {
 async function getOptimalRouteFromGemini(startLocation, destinations) {
   addDebugLog('Gemini API 함수 시작', { startLocation, destinations });
   
-  const prompt = `
+  const prompt = `다음 문제를 해결하세요. 최종 출력은 목적지 번호만 담은 JSON 배열 1줄이며, 설명/코멘트/개행 없이 배열만 출력합니다.
+
+[목표]
+- 출발지 기준으로 N개 목적지의 "차량 이동 총 소요시간(교통 반영)"을 최소화하는 방문 순서(ATSP)를 구합니다.
+
+[입력]
 출발지: ${startLocation}
-목적지들: ${destinations.map((addr, i) => `${i}. ${addr}`).join('\n')}
+목적지(번호·주소):
+${destinations.map((addr, i) => `${i}. ${addr}`).join('\n')}
 
-위 출발지에서 시작해서 모든 목적지를 방문하는 최적 경로를 찾아주세요.
-이동 거리와 시간을 최소화하는 순서로 목적지 번호만 반환해주세요.
+[조건]
+- 가능하면 지도 확장/지식으로 지오코딩 후 i→j 주행시간 ETA를 비용으로 사용(직선거리 금지). 현재 시각 기준 시간의존 교통 가정.
+- 확장을 못 쓸 경우 휴리스틱: (1) 지역 군집→군집 순환, (2) 주요 간선도로 우선, (3) 좌회전·유턴 최소, (4) 막다른 골목 회피.
+- 각 번호는 정확히 1회 사용. 등가해면 좌회전·유턴 적은 순/간선 활용도 높은 순 선택.
 
-응답 형식: [0,1,2,3,4] (목적지 번호 배열만)
-설명이나 다른 텍스트 없이 JSON 배열만 반환해주세요.
-`;
+[출력]
+- JSON 배열 1줄만 출력: 예) [2,0,3,1,...]`;
 
   addDebugLog('생성된 프롬프트', { prompt });
 
@@ -2407,18 +2423,186 @@ function getSimpleFallbackOrder(destinations) {
 }
 
 function calculateAddressSimilarity(addr1, addr2) {
-  // Simple text-based similarity for Korean addresses
+  // Enhanced similarity for Gwangjin-gu addresses
   const words1 = addr1.replace(/\d+/g, '').split(/\s+/).filter(w => w.length > 0);
   const words2 = addr2.replace(/\d+/g, '').split(/\s+/).filter(w => w.length > 0);
   
   let commonWords = 0;
+  let regionScore = 0;
+  
+  // Basic word matching
   for (const word1 of words1) {
     if (words2.some(word2 => word2.includes(word1) || word1.includes(word2))) {
       commonWords++;
     }
   }
   
-  return commonWords / Math.max(words1.length, words2.length, 1);
+  // Regional clustering for Gwangjin-gu
+  const regions = {
+    western: ['구의', '자양'],           // 서측
+    northern: ['능동', '중곡'],          // 북측  
+    riverside: ['뚝섬', '한강', '강변'], // 한강변
+    central: ['아차산', '동일']          // 중앙간선
+  };
+  
+  const getRegion = (addr) => {
+    for (const [region, keywords] of Object.entries(regions)) {
+      if (keywords.some(keyword => addr.includes(keyword))) {
+        return region;
+      }
+    }
+    return 'unknown';
+  };
+  
+  const region1 = getRegion(addr1);
+  const region2 = getRegion(addr2);
+  
+  // Same region gets higher score
+  if (region1 === region2 && region1 !== 'unknown') {
+    regionScore = 2;
+  } else if (region1 !== 'unknown' && region2 !== 'unknown') {
+    // Adjacent regions get moderate score
+    const adjacency = {
+      western: ['northern', 'riverside'],
+      northern: ['western', 'central'],
+      riverside: ['western', 'central'],
+      central: ['northern', 'riverside']
+    };
+    if (adjacency[region1]?.includes(region2)) {
+      regionScore = 1;
+    }
+  }
+  
+  return (commonWords + regionScore) / Math.max(words1.length, words2.length, 3);
+}
+
+// Route Algorithm Comparison
+async function compareRouteAlgorithms() {
+  if (주소목록.length < 2) {
+    alert('경로 비교를 위해서는 최소 2곳 이상의 출장지가 필요합니다.');
+    return;
+  }
+
+  const startLocation = document.getElementById('startLocation').value.trim() || '아차산로 400';
+  
+  addDebugLog('=== 알고리즘 비교 시작 ===', { startLocation, addresses: 주소목록 });
+
+  // Show loading
+  document.getElementById('route-loading').style.display = 'block';
+  
+  const results = {};
+  
+  try {
+    // 1. AI 최적화 결과
+    try {
+      const aiResult = await getOptimalRouteFromGemini(startLocation, 주소목록);
+      results.ai = aiResult;
+      addDebugLog('AI 알고리즘 결과', { result: aiResult });
+    } catch (error) {
+      results.ai = null;
+      addDebugLog('AI 알고리즘 실패', { error: error.message });
+    }
+
+    // 2. 지역 기반 Fallback 결과
+    const fallbackResult = getSimpleFallbackOrder(주소목록);
+    results.fallback = fallbackResult;
+    addDebugLog('Fallback 알고리즘 결과', { result: fallbackResult });
+
+    // 3. 현재 순서
+    results.current = Array.from({ length: 주소목록.length }, (_, i) => i);
+
+    // 결과 표시
+    showRouteComparison(results, startLocation);
+
+  } catch (error) {
+    addDebugLog('알고리즘 비교 중 오류', { error: error.message });
+    alert('알고리즘 비교 중 오류가 발생했습니다.');
+  } finally {
+    document.getElementById('route-loading').style.display = 'none';
+  }
+}
+
+
+function showRouteComparison(results, startLocation) {
+  let comparisonHTML = `
+    <div style="max-width: 600px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+      <h3 style="text-align: center; color: #1b3c82; margin-bottom: 25px;">🔍 경로 알고리즘 비교</h3>
+      <p style="text-align: center; color: #666; margin-bottom: 20px;">출발지: ${startLocation}</p>
+  `;
+
+  const algorithms = [
+    { key: 'ai', name: '🤖 Gemini ATSP', color: '#2196F3' },
+    { key: 'fallback', name: '📍 지역 기반', color: '#FF9800' },
+    { key: 'current', name: '📋 현재 순서', color: '#9E9E9E' }
+  ];
+
+  algorithms.forEach(alg => {
+    if (results[alg.key]) {
+      const route = results[alg.key].map(i => 주소목록[i]);
+      comparisonHTML += `
+        <div style="margin-bottom: 20px; padding: 15px; border-left: 4px solid ${alg.color}; background: rgba(0,0,0,0.02);">
+          <div style="font-weight: 600; color: ${alg.color}; margin-bottom: 8px;">${alg.name}</div>
+          <div style="font-size: 0.9rem; line-height: 1.4;">
+            ${route.map((addr, idx) => `${idx + 1}. ${addr}`).join('<br>')}
+          </div>
+          <button onclick="applyRoute([${results[alg.key].join(',')}], '${alg.name}')" 
+                  style="margin-top: 10px; padding: 5px 15px; background: ${alg.color}; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">
+            이 경로 적용
+          </button>
+        </div>
+      `;
+    }
+  });
+
+  comparisonHTML += `
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="closeComparisonModal()" class="btn btn-secondary">닫기</button>
+      </div>
+    </div>
+  `;
+
+  // Create modal overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'comparisonModal';
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+    z-index: 10000; backdrop-filter: blur(5px);
+  `;
+  overlay.innerHTML = comparisonHTML;
+  document.body.appendChild(overlay);
+}
+
+function applyRoute(routeOrder, algorithmName) {
+  addDebugLog('경로 적용', { routeOrder, algorithmName });
+  
+  const newOrder = [];
+  routeOrder.forEach(index => {
+    if (index >= 0 && index < 주소목록.length) {
+      newOrder.push(주소목록[index]);
+    }
+  });
+  
+  주소목록 = newOrder;
+  saveAddressList();
+  updateTravelMode();
+  updateAddressPreview();
+  
+  closeComparisonModal();
+  closeModal();
+  
+  alert(`✅ ${algorithmName} 경로가 적용되었습니다!`);
+}
+
+function closeComparisonModal() {
+  const modal = document.getElementById('comparisonModal');
+  if (modal) {
+    document.body.removeChild(modal);
+  }
+}
+
+function showManualRouteEditor() {
+  alert('🚧 수동 편집 기능은 개발 중입니다.\n\n현재는 알고리즘 비교에서 원하는 경로를 선택해 사용하세요.');
 }
 
 // API Connection Test
