@@ -5,37 +5,593 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>진출로 – 출장길 도우미</title>
   <style>
-     .dropdown-item.memo-marked::after {
-    content: "\1F4DD"; /* 📝 */
-    float: right;
-    margin-left: 8px;
-    font-size: 1rem;
-  }
-   .photo-preview {
-    width: 100px;
-    height: 80px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    object-fit: cover;
-    cursor: pointer;
-  }
-   .photo-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-   }
-     #customDropdown {
-    position: absolute;
-    z-index: 1000;
-    background-color: white;
-    width: calc(100% - 22px);
-  }
+    /* Modern CSS Reset & Base Styles */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f7f9fc;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       margin: 0;
-      padding: 10px;
+      padding: 0;
+      min-height: 100vh;
+      color: #333;
+    }
+    
+    .app-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    /* Header Styles */
+    .app-header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .app-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1b3c82;
+      margin-bottom: 5px;
+    }
+    
+    .app-subtitle {
+      color: #666;
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+    }
+    
+    /* Banner Styles */
+    .app-banner {
+      border-radius: 15px;
+      padding: 0;
+      margin: 15px 0 20px 0;
+      overflow: hidden;
+      position: relative;
+      background: transparent;
+    }
+    
+    .banner-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 15px;
+    }
+    
+    /* Mode Selection Styles */
+    .mode-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .mode-card {
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid transparent;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .mode-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .mode-card.active {
+      border-color: #1b3c82;
+      background: #1b3c82;
+      color: white;
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(27, 60, 130, 0.3);
+    }
+    
+    .mode-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+    
+    .mode-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+    }
+    
+    .mode-desc {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    
+    /* Card Styles */
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .card-icon {
+      font-size: 1.5rem;
+      color: #1b3c82;
+    }
+    
+    .card-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+    }
+    
+    .card-content {
+      line-height: 1.6;
+    }
+    
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e1e5e9;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.8);
+    }
+    
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: #1b3c82;
+      box-shadow: 0 0 0 3px rgba(27, 60, 130, 0.1);
+      background: white;
+    }
+    
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    /* Button Styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 15px 25px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      justify-content: center;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      border: 2px solid #e1e5e9;
+    }
+    
+    .btn-secondary:hover {
+      background: white;
+      border-color: #1b3c82;
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      color: white;
+    }
+    
+    .btn-full {
+      width: 100%;
+    }
+    
+    /* Map Selection Buttons */
+    .map-option {
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #e1e5e9;
+      border-radius: 15px;
+      padding: 20px 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      font-family: inherit;
+    }
+    
+    .map-option:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      border-color: #1b3c82;
+    }
+    
+    .map-option.selected {
+      background: #1b3c82;
+      color: white;
+      border-color: #1b3c82;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(27, 60, 130, 0.3);
+    }
+    
+    .map-icon {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    
+    .map-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .map-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    
+    /* Step Indicator */
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .step {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .step.completed {
+      background: #4facfe;
+      color: white;
+    }
+    
+    .step.active {
+      background: #1b3c82;
+      color: white;
+      transform: scale(1.1);
+    }
+    
+    .step.pending {
+      background: #f0f0f0;
+      color: #999;
+    }
+    
+    .step-line {
+      width: 30px;
+      height: 2px;
+      background: #f0f0f0;
+    }
+    
+    .step-line.completed {
+      background: #4facfe;
+    }
+    
+    /* Address Card Styles */
+    .address-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-left: 5px solid #e1e5e9;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .address-card:hover {
+      transform: translateX(5px);
+      border-left-color: #1b3c82;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .address-card.completed {
+      border-left-color: #4facfe;
+      background: rgba(79, 172, 254, 0.05);
+    }
+    
+    .address-card.pending {
+      border-left-color: #fa709a;
+      background: rgba(250, 112, 154, 0.05);
+    }
+    
+    .address-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .address-status {
+      font-size: 0.9rem;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    
+    .status-completed {
+      background: rgba(79, 172, 254, 0.2);
+      color: #1b3c82;
+    }
+    
+    .status-pending {
+      background: rgba(250, 112, 154, 0.2);
+      color: #c62828;
+    }
+    
+    .status-none {
+      background: rgba(0, 0, 0, 0.1);
+      color: #666;
+    }
+    
+    /* Photo Grid */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .photo-preview {
+      width: 100%;
+      height: 80px;
+      border-radius: 10px;
+      object-fit: cover;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+    }
+    
+    .photo-preview:hover {
+      transform: scale(1.05);
+      border-color: #1b3c82;
+    }
+    
+    /* Data Management Styles */
+    .data-management {
+      text-align: center;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      backdrop-filter: blur(5px);
+    }
+    
+    .data-status {
+      font-size: 1rem;
+      color: rgba(27, 60, 130, 0.8);
+      font-weight: 500;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .modal-header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1b3c82;
+      margin-bottom: 10px;
+    }
+    
+    .modal-subtitle {
+      color: #666;
+      font-size: 0.95rem;
+    }
+    
+    .option-grid {
+      display: grid;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    
+    .option-card {
+      background: rgba(255, 255, 255, 0.8);
+      border: 2px solid #e1e5e9;
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    
+    .option-card:hover {
+      border-color: #1b3c82;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .option-card.danger:hover {
+      border-color: #e74c3c;
+      background: rgba(231, 76, 60, 0.05);
+    }
+    
+    .option-card.warning:hover {
+      border-color: #f39c12;
+      background: rgba(243, 156, 18, 0.05);
+    }
+    
+    .option-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    
+    .option-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .option-desc {
+      font-size: 0.9rem;
+      color: #666;
+    }
+    
+    /* Hide sections by default */
+    .mode-section {
+      display: none;
+    }
+    
+    .mode-section.active {
+      display: block;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .app-container {
+        padding: 15px;
+      }
+      
+      .mode-selector {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .app-title {
+        font-size: 1.7rem;
+      }
+      
+      .btn {
+        padding: 12px 20px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .mode-selector {
+        grid-template-columns: 1fr;
+      }
+      
+      .step-indicator {
+        gap: 10px;
+      }
+      
+      .step {
+        width: 35px;
+        height: 35px;
+      }
+      
+      .step-line {
+        width: 20px;
+      }
+    }
+    
+    /* Legacy styles for compatibility */
+    .dropdown-item.memo-marked::after {
+      content: "\1F4DD";
+      float: right;
+      margin-left: 8px;
+      font-size: 1rem;
+    }
+    
+    #customDropdown {
+      position: absolute;
+      z-index: 1000;
+      background-color: white;
+      width: calc(100% - 22px);
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
     header {
       display: flex;
@@ -164,544 +720,1081 @@ tr.status-직접입력 {
   </style>
 </head>
 <body>
-<header>
-  <div>
-    <img src="https://www.gwangjin.go.kr/editorUpload/images/000196/20221007110449234_IXETSNKL.png"
-         alt="광진구 CI"
-         onclick="showTab('manage', event)">
-    <div style="text-align: left; line-height: 1.0;">
-  <div style="font-size: 1.3rem; font-weight: bold; color: #1b3c82;">
-    진출로 <span style="font-size: 1.2rem;">(進出路)</span>
-  </div>
-  <div style="font-size: 1.3rem; color: #555; font-weight: bold;">
-    :출장길 도우미
-  </div>
-</div>
+  <div class="app-container">
+    <!-- App Header -->
+    <div class="app-header">
+      <div class="app-title">진출로 (進出路)</div>
+      <div class="app-subtitle">출장길 스마트 도우미</div>
+      
+      <!-- Banner -->
+      <div class="app-banner">
+        <img src="https://chrisryugj.github.io/GJRoad/images/ban.png" alt="진출로 배너" class="banner-image">
+      </div>
+      
+      <!-- Data Management Options -->
+      <div id="data-management" class="data-management" style="margin: 20px 0;">
+        <div class="data-status" id="data-status">
+          <span>🗂️ <span id="total-addresses">0</span>개 출장지 등록됨</span>
+        </div>
+        <div class="data-actions" style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+          <button class="btn btn-secondary" onclick="showDataOptions()" id="manage-data-btn" style="padding: 8px 16px; font-size: 0.9rem;">
+            ⚙️ 데이터 관리
+          </button>
+        </div>
+      </div>
+      
+      <!-- Mode Selection -->
+      <div class="mode-selector">
+        <div class="mode-card active" data-mode="prepare" onclick="selectMode('prepare')">
+          <span class="mode-icon">📋</span>
+          <div class="mode-title">준비모드</div>
+          <div class="mode-desc">출장 준비</div>
+        </div>
+        
+        <div class="mode-card" data-mode="travel" onclick="selectMode('travel')">
+          <span class="mode-icon">🚗</span>
+          <div class="mode-title">출장모드</div>
+          <div class="mode-desc">현장 이동</div>
+        </div>
+        
+        <div class="mode-card" data-mode="record" onclick="selectMode('record')">
+          <span class="mode-icon">📝</span>
+          <div class="mode-title">기록모드</div>
+          <div class="mode-desc">메모 작성</div>
+        </div>
+        
+        <div class="mode-card" data-mode="summary" onclick="selectMode('summary')">
+          <span class="mode-icon">📈</span>
+          <div class="mode-title">정리모드</div>
+          <div class="mode-desc">데이터 정리</div>
+        </div>
+      </div>
+    </div>
 
-</div>
-  </div>
-  <img id="bannerImage" src="" alt="배너 이미지">
-</header>
-
-<div class="tabs">
-  <button class="tab-btn active" data-tab="manage">주소 관리</button>
-  <button class="tab-btn" data-tab="table">전체 목록</button>
-  <button class="tab-btn" data-tab="stats">통계 보기</button>
-</div>
-
-<div id="tab-manage" class="tab-content active">
-
-
-<div class="card-ui">
-  <label for="mapSelect" style="font-weight: bold;">🗺️ 지도 앱 선택</label>
-  <select id="mapSelect" onchange="saveMapPreference()">
-    <option value="naver">네이버지도</option>
-    <option value="kakao">카카오맵</option>
-    <option value="google">구글지도</option>
-  </select>
-
-</div>    
-<div class="card-ui">
-  <label for="addrInput" style="font-weight: bold;">🏠 주소 선택</label>
-  <input
-  id="addrInput"
-  name="no_autofill"
-  type="text"
-  placeholder="저장된 주소 선택하기(업로드/복사+붙여넣기)"
-  autocomplete="off"
-  autocorrect="off"
-  spellcheck="false"
-  onfocus="this.value=''; showDropdown();"
-  oninput="showDropdown()"
-  onclick="showDropdown()"
-/>
-<div id="memoSection" class="card-ui" style="display:none;">
-  <label for="memoInput" style="font-weight: bold;">📝 현장 메모</label>
-  <textarea id="memoInput" placeholder="현장 특이사항이나 참고 메모를 남기세요."></textarea>
-
-  <label style="font-weight: bold;">📸 현장 사진 (최대 5장)</label>
-  <input type="file" id="photoInput" accept="image/*" multiple onchange="savePhoto()">
-  <div id="photoContainer" class="photo-grid"></div>
-
-  <button onclick="saveMemo()">💾 저장</button>
-</div>
-
-  <div id="customDropdown" style="display:none; border:1px solid #ccc; max-height:200px; overflow-y:auto; border-radius:6px;"></div>
-</div>
- 
- <div class="card-ui">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-    <label for="statusSelect" style="font-weight: bold;">📝 출장 상태 선택</label>
-    <label style="font-size: 0.9rem;">
-      <input type="checkbox" id="memoModeToggle" onchange="saveMemoMode()"> 📝메모전용모드
-    </label>
+    <!-- Prepare Mode -->
+    <div id="mode-prepare" class="mode-section active">
+      <!-- Step Indicator -->
+      <div class="step-indicator">
+        <div class="step active" data-step="1">1</div>
+        <div class="step-line"></div>
+        <div class="step pending" data-step="2">2</div>
+        <div class="step-line"></div>
+        <div class="step pending" data-step="3">3</div>
+      </div>
+      
+      <!-- Step 1: Map Selection -->
+      <div class="card" id="step-map">
+        <div class="card-header">
+          <span class="card-icon">🗺️</span>
+          <h3 class="card-title">1단계: 지도 앱 선택</h3>
+        </div>
+        <div class="card-content">
+          <div class="form-group">
+            <label class="form-label">사용할 지도 앱을 선택하세요</label>
+            
+            <!-- Map Selection Buttons -->
+            <div class="map-selector" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 20px;">
+              <button class="map-option" data-map="naver" onclick="selectMapApp('naver')">
+                <div class="map-icon">
+                  <img src="https://chrisryugj.github.io/GJRoad/images/nmap.jpg" alt="네이버지도">
+                </div>
+                <div class="map-name">네이버지도</div>
+              </button>
+              
+              <button class="map-option" data-map="kakao" onclick="selectMapApp('kakao')">
+                <div class="map-icon">
+                  <img src="https://chrisryugj.github.io/GJRoad/images/kmap.jpg" alt="카카오맵">
+                </div>
+                <div class="map-name">카카오맵</div>
+              </button>
+              
+              <button class="map-option" data-map="google" onclick="selectMapApp('google')">
+                <div class="map-icon">
+                  <img src="https://chrisryugj.github.io/GJRoad/images/gmap.jpg" alt="구글지도">
+                </div>
+                <div class="map-name">구글지도</div>
+              </button>
+            </div>
+            
+            <!-- Remember Choice Checkbox -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+              <input type="checkbox" id="rememberMap" checked style="width: auto; transform: scale(1.2);">
+              <label for="rememberMap" style="margin: 0; font-size: 0.95rem; color: #666;">
+                ✅ 선택한 지도 앱을 기억하기
+              </label>
+            </div>
+            
+            <!-- Continue Button -->
+            <button id="continueStep2" class="btn btn-primary btn-full" onclick="nextStep(2)" style="display: none;">
+              ➡️ 2단계로 계속
+            </button>
+            
+            <!-- Hidden select for compatibility -->
+            <select id="mapSelect" style="display: none;">
+              <option value="naver">네이버지도</option>
+              <option value="kakao">카카오맵</option>
+              <option value="google">구글지도</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 2: Address Input Method -->
+      <div class="card" id="step-input" style="display: none;">
+        <div class="card-header">
+          <span class="card-icon">🏠</span>
+          <h3 class="card-title">2단계: 출장지 입력 방식 선택</h3>
+        </div>
+        <div class="card-content">
+          <div style="display: grid; gap: 15px;">
+            <button class="btn btn-primary" onclick="showAddressInput('single')">
+              📝 개별 입력
+            </button>
+            <button class="btn btn-secondary" onclick="showAddressInput('file')">
+              📁 파일 업로드
+            </button>
+            <button class="btn btn-secondary" onclick="showAddressInput('bulk')">
+              📋 일괄 붙여넣기
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Address Input Forms -->
+      <div id="address-input-forms" style="display: none;">
+        <!-- Single Address Input -->
+        <div class="card" id="single-input" style="display: none;">
+          <div class="card-header">
+            <span class="card-icon">📝</span>
+            <h3 class="card-title">출장지 개별 입력</h3>
+          </div>
+          <div class="card-content">
+            <div class="form-group">
+              <input type="text" id="singleAddress" class="form-input" placeholder="주소를 입력하세요">
+              <button class="btn btn-success btn-full" onclick="addSingleAddress()" style="margin-top: 10px;">
+                ➕ 출장지 추가
+              </button>
+            </div>
+            <div id="added-addresses" class="form-group"></div>
+            <button class="btn btn-primary btn-full" onclick="completeAddressInput()" style="display: none;" id="complete-btn">
+              ✓ 입력 완료
+            </button>
+          </div>
+        </div>
+        
+        <!-- File Upload -->
+        <div class="card" id="file-input" style="display: none;">
+          <div class="card-header">
+            <span class="card-icon">📁</span>
+            <h3 class="card-title">출장지 파일 업로드</h3>
+          </div>
+          <div class="card-content">
+            <div class="form-group">
+              <label class="form-label">TXT 또는 CSV 파일을 선택하세요</label>
+              <input type="file" id="fileUpload" class="form-input" accept=".txt,.csv" onchange="loadAddressFile(event)">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Bulk Paste -->
+        <div class="card" id="bulk-input" style="display: none;">
+          <div class="card-header">
+            <span class="card-icon">📋</span>
+            <h3 class="card-title">출장지 일괄 입력</h3>
+          </div>
+          <div class="card-content">
+            <div class="form-group">
+              <label class="form-label">주소를 줄 단위로 붙여넣어 주세요</label>
+              <textarea id="bulkPaste" class="form-textarea" placeholder="예:
+서울시 광진구 구의동 123
+서울시 광진구 자양동 456
+..."></textarea>
+              <button class="btn btn-success btn-full" onclick="addFromTextarea()" style="margin-top: 10px;">
+                💾 출장지 저장
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 3: Address List Preview -->
+      <div class="card" id="step-preview" style="display: none;">
+        <div class="card-header">
+          <span class="card-icon">📋</span>
+          <h3 class="card-title">3단계: 출장지 목록 확인</h3>
+        </div>
+        <div class="card-content">
+          <div id="address-preview-list"></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+            <button class="btn btn-danger" onclick="resetAddressList()">
+              🗑️ 목록 초기화
+            </button>
+            <button class="btn btn-primary" onclick="selectMode('travel')">
+              🚗 출장 시작
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Travel Mode -->
+    <div id="mode-travel" class="mode-section">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">🚗</span>
+          <h3 class="card-title">출장지 목록</h3>
+        </div>
+        <div class="card-content">
+          <div id="travel-address-list"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Record Mode -->
+    <div id="mode-record" class="mode-section">
+      <div class="card" id="record-card">
+        <div class="card-header">
+          <span class="card-icon">📝</span>
+          <h3 class="card-title" id="record-title">기록 작성</h3>
+        </div>
+        <div class="card-content">
+          <div class="form-group">
+            <label class="form-label">출장 상태 선택</label>
+            <select id="recordStatusSelect" class="form-select" onchange="handleRecordStatusChange()">
+              <option value="" disabled selected>상태 선택</option>
+              <option value="출장완료">출장완료</option>
+              <option value="미출장">미출장</option>
+              <option value="직접입력">직접입력</option>
+            </select>
+            <input type="text" id="customRecordStatus" class="form-input" placeholder="상태 직접 입력" style="display: none; margin-top: 10px;">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">현장 메모</label>
+            <textarea id="recordMemo" class="form-textarea" placeholder="현장 특이사항이나 참고 메모를 남기세요"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">현장 사진 (최대 5장)</label>
+            <input type="file" id="recordPhotoInput" class="form-input" accept="image/*" multiple onchange="saveRecordPhoto()">
+            <div id="recordPhotoContainer" class="photo-grid"></div>
+          </div>
+          
+          <button class="btn btn-success btn-full" onclick="saveRecord()">
+            💾 기록 저장
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Summary Mode -->
+    <div id="mode-summary" class="mode-section">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">📈</span>
+          <h3 class="card-title">출장 통계</h3>
+        </div>
+        <div class="card-content">
+          <div id="statsCount" style="text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 1.2rem;"></div>
+          <canvas id="statusChart" width="400" height="300"></canvas>
+          <div id="chartTextOutput" style="text-align: center; margin-top: 15px; font-size: 0.95rem;"></div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">📊</span>
+          <h3 class="card-title">전체 목록</h3>
+        </div>
+        <div class="card-content">
+          <div id="tableSummary" style="text-align: center; margin-bottom: 20px; font-weight: 600;"></div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <button class="btn btn-secondary" onclick="copyTable()">
+              📄 복사하기
+            </button>
+            <button class="btn btn-secondary" onclick="exportText()">
+              📁 텍스트 다운로드
+            </button>
+            <button class="btn btn-success" onclick="exportText()">
+              📅 엑셀로 다운로드
+            </button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+              <thead>
+                <tr style="background: rgba(27, 60, 130, 0.1); border-bottom: 2px solid #1b3c82;">
+                  <th style="padding: 15px; text-align: left; font-weight: 600;">주소</th>
+                  <th style="padding: 15px; text-align: left; font-weight: 600;">상태</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   
-  <select id="statusSelect" onchange="handleStatusChange()">
-    <option value="" disabled selected hidden>선택 / 메모 남기기</option>
-    <option value="출장완료">출장완료</option>
-    <option value="미출장">미출장</option>
-    <option value="직접입력">직접입력 (아래 입력)</option>
-  </select>
+  <!-- Hidden elements for compatibility -->
+  <div style="display: none;">
+    <!-- Legacy elements for compatibility -->
+    <input id="addrInput" name="no_autofill" type="text" style="display: none;">
+    <div id="memoSection" style="display: none;">
+      <textarea id="memoInput"></textarea>
+      <input type="file" id="photoInput" accept="image/*" multiple>
+      <div id="photoContainer" class="photo-grid"></div>
+    </div>
+    <div id="customDropdown" style="display: none;"></div>
+    <select id="statusSelect" style="display: none;">
+      <option value="">선택</option>
+      <option value="출장완료">출장완료</option>
+      <option value="미출장">미출장</option>
+      <option value="직접입력">직접입력</option>
+    </select>
+    <input id="customStatusInput" type="text" style="display: none;">
+</div>
+
   
-  <input id="customStatusInput" type="text" maxlength="100" placeholder="상태 직접 입력 (100자 이내)" style="display:none;" oninput="saveStatus()">
-</div>
-
-<hr style="border: none; height: 4px; background-color: #ccc; margin: 0 0 15px 0;">
-<div class="card-ui">
-  <label for="fileUpload" style="font-weight: bold;">📁 주소 파일 업로드</label>
-  <input id="fileUpload" type="file" accept=".txt,.csv" onchange="loadAddressFile(event)">
-</div>
-
-  <div class="card-ui">
-    <label for="bulkPaste" style="font-weight: bold;">📋 주소 복사해서 입력</label>
-    <textarea id="bulkPaste" placeholder="주소를 줄 단위로 복사해 붙여넣고 밑에 저장버튼 클릭"></textarea>
-    <button onclick="addFromTextarea()">📋 붙여넣은 주소 저장</button>
+  <!-- Data Management Modal -->
+  <div id="dataModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">📊 데이터 관리</div>
+        <div class="modal-subtitle">출장 기록을 관리하거나 초기화할 수 있습니다</div>
+      </div>
+      
+      <div class="option-grid">
+        <div class="option-card" onclick="continueWithExistingData()">
+          <div class="option-icon">✅</div>
+          <div class="option-title">기존 데이터로 계속하기</div>
+          <div class="option-desc">저장된 출장지와 기록을 유지합니다</div>
+        </div>
+        
+        <div class="option-card warning" onclick="showResetOptions()">
+          <div class="option-icon">🔄</div>
+          <div class="option-title">데이터 초기화</div>
+          <div class="option-desc">일부 또는 전체 데이터를 삭제합니다</div>
+        </div>
+      </div>
+      
+      <div style="text-align: center;">
+        <button class="btn btn-secondary" onclick="closeModal()">
+          취소
+        </button>
+      </div>
+    </div>
   </div>
-
-  <div class="card-ui" style="display: flex; gap: 10px;">
-    <button onclick="resetAddressList()">📂 주소 초기화</button>
-    <button onclick="resetStatusMap()">🧹 상태 초기화</button>
+  
+  <!-- Reset Options Modal -->
+  <div id="resetModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🔄 데이터 초기화 옵션</div>
+        <div class="modal-subtitle">초기화할 데이터 범위를 선택하세요</div>
+      </div>
+      
+      <div class="option-grid">
+        <div class="option-card" onclick="showAddressSelector()">
+          <div class="option-icon">🎯</div>
+          <div class="option-title">선택 초기화</div>
+          <div class="option-desc">특정 출장지의 기록만 삭제합니다</div>
+        </div>
+        
+        <div class="option-card danger" onclick="confirmFullReset()">
+          <div class="option-icon">💥</div>
+          <div class="option-title">전체 초기화</div>
+          <div class="option-desc">모든 출장지와 기록을 완전히 삭제합니다</div>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn btn-secondary" onclick="showResetOptions()">
+          ← 뒤로
+        </button>
+        <button class="btn btn-secondary" onclick="closeModal()">
+          취소
+        </button>
+      </div>
+    </div>
   </div>
-</div>
-
-<div id="tab-table" class="tab-content">
-  <div class="card-ui">
-  <div id="tableSummary">총 0건</div>
-  <button onclick="copyTable()">📄 복사하기</button>
-  <button onclick="exportText()">📁 텍스트 다운로드</button>
-  <button onclick="exportText()">📥 엑셀로 다운로드</button> <!-- ✅ 추가 -->
-  <table style="width:100%; font-size:0.9rem;">
-    <thead><tr><th>주소</th><th>상태</th></tr></thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-</div>
-
-</div>
-
-<div id="tab-stats" class="tab-content">
-  <div class="card-ui">
-    <div id="statsCount" style="text-align:center; font-weight:bold; margin-bottom:10px;"></div>
-    <canvas id="statusChart" width="400" height="300"></canvas>
-    <div id="chartTextOutput"></div>
+  
+  <!-- Address Selector Modal -->
+  <div id="addressSelectorModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🎯 출장지 선택</div>
+        <div class="modal-subtitle">초기화할 출장지를 선택하세요</div>
+      </div>
+      
+      <div id="address-selector-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+        <!-- Address list will be populated here -->
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn btn-danger" onclick="resetSelectedAddresses()" id="reset-selected-btn" style="display: none;">
+          🗑️ 선택된 항목 삭제
+        </button>
+        <button class="btn btn-secondary" onclick="showResetOptions()">
+          ← 뒤로
+        </button>
+        <button class="btn btn-secondary" onclick="closeModal()">
+          취소
+        </button>
+      </div>
+    </div>
   </div>
-</div>
-
-<footer>
-  (c) 2025 광진구청 가로경관과 개친절한 류주임
-</footer>
+  
+  <footer style="text-align: center; padding: 20px; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+    © 2025 광진구청 가로경관과 · 진출로 v2.0
+  </footer>
   
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+// App State Management
+const AppState = {
+  currentMode: 'prepare',
+  currentStep: 1,
+  currentAddress: null,
+  inputMethod: null
+};
+
+// Data Storage
 const originalPhotoMap = {};
-let memoMode = localStorage.getItem("memoMode") === "true";
 let preferredMap = localStorage.getItem("preferredMap") || "naver";
 let statusMap = JSON.parse(localStorage.getItem("statusMap")) || {};
 let memoMap = JSON.parse(localStorage.getItem("memoMap")) || {};
 let photoMap = JSON.parse(localStorage.getItem("photoMap")) || {};
-let 주소목록 = [];
-let currentAddress = null;
-let viewedAddresses = new Set();
-let useAppDefault = localStorage.getItem("useApp") !== "false";
-  
-function deletePhoto(index) {
-  if (!currentAddress) return;
-  if (photoMap[currentAddress]) photoMap[currentAddress].splice(index, 1);
-  localStorage.setItem("photoMap", JSON.stringify(photoMap));
-  renderPhotos();
-}
+let 주소목록 = JSON.parse(localStorage.getItem("addressList")) || [];
+let viewedAddresses = new Set(JSON.parse(localStorage.getItem("viewedAddresses")) || []);
 
-function handlePhotoClick(index) {
-  const imgUrl = originalPhotoMap[currentAddress]?.[index];
-  if (!imgUrl) return;
-  const dialog = document.createElement("div");
-  dialog.style.position = "fixed";
-  dialog.style.top = "50%";
-  dialog.style.left = "50%";
-  dialog.style.transform = "translate(-50%, -50%)";
-  dialog.style.background = "white";
-  dialog.style.padding = "20px";
-  dialog.style.border = "1px solid #ccc";
-  dialog.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
-  dialog.style.zIndex = 9999;
-  dialog.innerHTML = `
-    <p style="margin-bottom: 10px;">사진 옵션을 선택하세요:</p>
-    <div style="display: flex; gap: 10px; justify-content: center;">
-      <button id="viewBtn">📷 크게 보기</button>
-      <button id="deleteBtn">❌ 삭제</button>
-      <button id="cancelBtn">취소</button>
-    </div>
-  `;
-  document.body.appendChild(dialog);
-
-  document.getElementById("viewBtn").onclick = () => {
-    const popup = window.open("", "_blank");
-    popup.document.write(`<img src='${imgUrl}' style='max-width:100%; height:auto;'>`);
-    document.body.removeChild(dialog);
-  };
-  document.getElementById("deleteBtn").onclick = () => {
-    deletePhoto(index);
-    document.body.removeChild(dialog);
-  };
-  document.getElementById("cancelBtn").onclick = () => {
-    document.body.removeChild(dialog);
-  };
-}
-  
-function renderPhotos() {
-  const container = document.getElementById("photoContainer");
-  if (!container || !currentAddress) return;
-
-  container.innerHTML = "";
-  const photos = Array.isArray(photoMap[currentAddress]) ? photoMap[currentAddress] : [];
-  if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = [...photos];
-
-  photos.forEach((url, i) => {
-    const img = document.createElement("img");
-    img.src = url;
-    img.className = "photo-preview";
-    img.setAttribute("data-index", i);
-    img.onclick = () => handlePhotoClick(i);
-    container.appendChild(img);
+// Mode Management Functions
+function selectMode(mode) {
+  // Update UI
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.classList.remove('active');
   });
+  document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+  
+  // Show/Hide sections
+  document.querySelectorAll('.mode-section').forEach(section => {
+    section.classList.remove('active');
+  });
+  document.getElementById(`mode-${mode}`).classList.add('active');
+  
+  AppState.currentMode = mode;
+  
+  // Initialize mode-specific content
+  if (mode === 'travel') {
+    updateTravelMode();
+  } else if (mode === 'summary') {
+    updateSummaryMode();
+  } else if (mode === 'prepare') {
+    // Show selected map app if exists
+    updateMapSelection();
+  }
 }
 
+// Map Selection Functions
+function selectMapApp(mapType) {
+  preferredMap = mapType;
   
-function exportText() {
-  const wb = XLSX.utils.book_new();
-  const data = [["주소", "상태", "메모", "사진1", "사진2", "사진3", "사진4", "사진5"]];
-  주소목록.forEach(addr => {
-    const status = statusMap[addr] || "미선택";
-    const memo = memoMap[addr] || "";
-    const photos = Array.isArray(photoMap[addr]) ? photoMap[addr] : [];
-    const links = photos.map(url => ({ l: { Target: url }, t: url }));
-    const limitedMemo = memo.length > 10000 ? memo.slice(0, 10000) + "..." : memo;
-    const row = [addr, status, limitedMemo, ...photos.slice(0, 5)];
-    while (row.length < 8) row.push("");
-    data.push(row);
+  // Update UI
+  document.querySelectorAll('.map-option').forEach(btn => {
+    btn.classList.remove('selected');
   });
-  const ws = XLSX.utils.aoa_to_sheet(data);
+  document.querySelector(`[data-map="${mapType}"]`).classList.add('selected');
+  
+  // Update hidden select for compatibility
+  document.getElementById('mapSelect').value = mapType;
+  
+  // Show continue button
+  document.getElementById('continueStep2').style.display = 'block';
+  
+  // Save preference if checkbox is checked
+  if (document.getElementById('rememberMap').checked) {
+    localStorage.setItem('preferredMap', preferredMap);
+  }
+}
 
-  // 사진 링크 셀에 하이퍼링크 추가
-  data.forEach((row, rowIndex) => {
-    if (rowIndex === 0) return; // 헤더 제외
-    for (let i = 3; i <= 7; i++) {
-      const cellAddr = XLSX.utils.encode_cell({ r: rowIndex, c: i });
-      const val = row[i];
-      if (val && typeof val === "string") {
-        ws[cellAddr].l = { Target: val };
-      }
+function updateMapSelection() {
+  // Restore selected map
+  if (preferredMap) {
+    document.querySelectorAll('.map-option').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+    const selectedBtn = document.querySelector(`[data-map="${preferredMap}"]`);
+    if (selectedBtn) {
+      selectedBtn.classList.add('selected');
+      document.getElementById('continueStep2').style.display = 'block';
+    }
+  }
+}
+
+// Step Management for Prepare Mode
+function nextStep(step) {
+  AppState.currentStep = step;
+  updateStepIndicator();
+  
+  if (step === 2) {
+    document.getElementById('step-map').style.display = 'none';
+    document.getElementById('step-input').style.display = 'block';
+  } else if (step === 3) {
+    document.getElementById('step-input').style.display = 'none';
+    document.getElementById('address-input-forms').style.display = 'none';
+    document.getElementById('step-preview').style.display = 'block';
+    updateAddressPreview();
+  }
+}
+
+function updateStepIndicator() {
+  document.querySelectorAll('.step').forEach((step, index) => {
+    const stepNum = index + 1;
+    if (stepNum < AppState.currentStep) {
+      step.className = 'step completed';
+    } else if (stepNum === AppState.currentStep) {
+      step.className = 'step active';
+    } else {
+      step.className = 'step pending';
     }
   });
-
-  XLSX.utils.book_append_sheet(wb, ws, "출장기록");
-  XLSX.writeFile(wb, "출장기록.xlsx");
-}
-
   
-  function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
-}
-
-
-function saveMemoMode() {
-  memoMode = document.getElementById("memoModeToggle").checked;
-  localStorage.setItem("memoMode", memoMode);
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  const toggle = document.getElementById("memoModeToggle");
-  if (toggle) toggle.checked = memoMode;
-});
-
-
-document.addEventListener("DOMContentLoaded", function() {
-  // 상태맵, 지도앱은 이미 복원 중
-  const savedViewed = localStorage.getItem("viewedAddresses");
-if (savedViewed) {
-  viewedAddresses = new Set(JSON.parse(savedViewed));
-}
-
-  const savedList = localStorage.getItem("addressList");
-  if (savedList) {
-    주소목록 = JSON.parse(savedList);
-  }
-
-  document.getElementById("mapSelect").value = preferredMap;
-  document.querySelectorAll(".tab-btn").forEach(button => {
-    button.addEventListener("click", function(e) {
-      const tabId = this.getAttribute("data-tab");
-      showTab(tabId, e);
-    });
+  document.querySelectorAll('.step-line').forEach((line, index) => {
+    if (index + 1 < AppState.currentStep) {
+      line.classList.add('completed');
+    } else {
+      line.classList.remove('completed');
+    }
   });
-
-  showTab("manage");
-});
-
-
-function showTab(tabId, event = null) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + tabId).classList.add('active');
-  if (event) event.target.classList.add('active');
-  else document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
-  if (tabId === "table") updateTable();
-  if (tabId === "stats") drawChart();
 }
 
-function saveMapPreference() {
-  preferredMap = document.getElementById("mapSelect").value;
-  localStorage.setItem("preferredMap", preferredMap);
+// Address Input Methods
+function showAddressInput(method) {
+  AppState.inputMethod = method;
+  document.getElementById('address-input-forms').style.display = 'block';
+  
+  // Hide all input forms first
+  document.getElementById('single-input').style.display = 'none';
+  document.getElementById('file-input').style.display = 'none';
+  document.getElementById('bulk-input').style.display = 'none';
+  
+  // Show selected form
+  document.getElementById(`${method}-input`).style.display = 'block';
 }
 
-function saveMemo() {
-  if (!currentAddress) return;
-  const memoInput = document.getElementById("memoInput");
-  const memo = memoInput.value.trim();
-  if (!memo) {
-    delete memoMap[currentAddress];
+function addSingleAddress() {
+  const input = document.getElementById('singleAddress');
+  const address = input.value.trim();
+  
+  if (!address) {
+    alert('주소를 입력해주세요.');
+    return;
+  }
+  
+  if (주소목록.includes(address)) {
+    alert('이미 추가된 주소입니다.');
+    return;
+  }
+  
+  주소목록.push(address);
+  saveAddressList();
+  updateDataStatus();
+  
+  // Update UI
+  updateAddedAddresses();
+  input.value = '';
+  
+  // Show complete button
+  document.getElementById('complete-btn').style.display = 'block';
+}
+
+function updateAddedAddresses() {
+  const container = document.getElementById('added-addresses');
+  if (!container) return;
+  
+  container.innerHTML = 주소목록.map((addr, index) => `
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(79, 172, 254, 0.1); border-radius: 8px; margin-bottom: 5px;">
+      <span>${addr}</span>
+      <button onclick="removeAddress(${index})" style="background: #fa709a; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer;">삭제</button>
+    </div>
+  `).join('');
+}
+
+function removeAddress(index) {
+  주소목록.splice(index, 1);
+  saveAddressList();
+  updateDataStatus();
+  updateAddedAddresses();
+  
+  if (주소목록.length === 0) {
+    document.getElementById('complete-btn').style.display = 'none';
+  }
+}
+
+function completeAddressInput() {
+  if (주소목록.length === 0) {
+    alert('최소 하나의 주소를 입력해주세요.');
+    return;
+  }
+  nextStep(3);
+}
+
+function updateAddressPreview() {
+  const container = document.getElementById('address-preview-list');
+  if (!container) return;
+  
+  if (주소목록.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">등록된 출장지가 없습니다.</p>';
+    return;
+  }
+  
+  container.innerHTML = 주소목록.map(addr => {
+    const status = statusMap[addr] || '미선택';
+    const statusClass = status === '출장완료' ? 'completed' : status === '미출장' ? 'pending' : 'none';
+    
+    return `
+      <div class="address-card ${status === '출장완료' ? 'completed' : status === '미출장' ? 'pending' : ''}">
+        <div class="address-title">
+          <span>${addr}</span>
+          <span class="address-status status-${statusClass}">${status}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Travel Mode Functions
+function updateTravelMode() {
+  const container = document.getElementById('travel-address-list');
+  if (!container) return;
+  
+  if (주소목록.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">먼저 준비모드에서 출장지를 등록해주세요.</p>';
+    return;
+  }
+  
+  container.innerHTML = 주소목록.map(addr => {
+    const status = statusMap[addr] || '미선택';
+    const statusClass = status === '출장완료' ? 'completed' : status === '미출장' ? 'pending' : 'none';
+    
+    return `
+      <div class="address-card ${status === '출장완료' ? 'completed' : status === '미출장' ? 'pending' : ''}" onclick="openAddressActions('${addr}')">
+        <div class="address-title">
+          <span style="font-size: 1.1rem;">${addr}</span>
+          <span class="address-status status-${statusClass}">${status}</span>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="event.stopPropagation(); openMapForAddress('${addr}')" style="flex: 1; padding: 10px;">
+            🗺️ 지도 열기
+          </button>
+          <button class="btn btn-secondary" onclick="event.stopPropagation(); openRecordMode('${addr}')" style="flex: 1; padding: 10px;">
+            📝 기록하기
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openMapForAddress(address) {
+  const baseAddr = address.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  const encodedAddr = encodeURIComponent(baseAddr);
+  
+  let url = '';
+  if (preferredMap === 'naver') {
+    url = `https://map.naver.com/v5/search/${encodedAddr}`;
+  } else if (preferredMap === 'kakao') {
+    url = `https://map.kakao.com/?q=${encodedAddr}`;
+  } else if (preferredMap === 'google') {
+    url = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
+  }
+  
+  window.open(url, '_blank');
+  
+  // Mark as viewed
+  viewedAddresses.add(address);
+  saveViewedAddresses();
+}
+
+function openRecordMode(address) {
+  AppState.currentAddress = address;
+  selectMode('record');
+  
+  // Pre-fill record form
+  document.getElementById('record-title').textContent = `${address} - 기록 작성`;
+  document.getElementById('recordStatusSelect').value = statusMap[address] || '';
+  document.getElementById('recordMemo').value = memoMap[address] || '';
+  
+  // Handle custom status
+  const status = statusMap[address] || '';
+  if (!['출장완료', '미출장', ''].includes(status)) {
+    document.getElementById('recordStatusSelect').value = '직접입력';
+    document.getElementById('customRecordStatus').style.display = 'block';
+    document.getElementById('customRecordStatus').value = status;
+  }
+  
+  renderRecordPhotos();
+}
+
+// Record Mode Functions
+function handleRecordStatusChange() {
+  const select = document.getElementById('recordStatusSelect');
+  const customInput = document.getElementById('customRecordStatus');
+  
+  if (select.value === '직접입력') {
+    customInput.style.display = 'block';
   } else {
+    customInput.style.display = 'none';
+  }
+}
+
+function saveRecord() {
+  if (!AppState.currentAddress) return;
+  
+  const statusSelect = document.getElementById('recordStatusSelect');
+  const customStatus = document.getElementById('customRecordStatus');
+  const memo = document.getElementById('recordMemo').value.trim();
+  
+  let status = statusSelect.value;
+  if (status === '직접입력') {
+    status = customStatus.value.trim().substring(0, 100);
+  }
+  
+  // Save status
+  if (status) {
+    statusMap[AppState.currentAddress] = status;
+  } else {
+    delete statusMap[AppState.currentAddress];
+  }
+  
+  // Save memo with timestamp
+  if (memo) {
     const now = new Date();
     const datePrefix = now.toISOString().slice(0, 10);
     const timePrefix = now.toTimeString().slice(0, 5);
-    memoMap[currentAddress] = `${datePrefix} ${timePrefix} - ${memo}`;
+    memoMap[AppState.currentAddress] = `${datePrefix} ${timePrefix} - ${memo}`;
+  } else {
+    delete memoMap[AppState.currentAddress];
   }
-  localStorage.setItem("memoMap", JSON.stringify(memoMap));
-  localStorage.setItem("photoMap", JSON.stringify(photoMap));
-  alert("메모가 저장되었습니다.");
-  document.getElementById("customDropdown").style.display = "block";
-  showDropdown();
-}
-function resizeImage(base64, maxWidth, maxHeight, callback) {
-  const img = new Image();
-  img.onload = function () {
-    const canvas = document.createElement("canvas");
-    let width = img.width;
-    let height = img.height;
-    const ratio = Math.min(1024 / width, 1024 / height, 1);
-    width = width * ratio;
-    height = height * ratio;
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, width, height);
-    const resizedBase64 = canvas.toDataURL("image/jpeg", 0.85);
-    callback(resizedBase64);
-  };
-  img.src = base64;
+  
+  // Save to localStorage
+  localStorage.setItem('statusMap', JSON.stringify(statusMap));
+  localStorage.setItem('memoMap', JSON.stringify(memoMap));
+  localStorage.setItem('photoMap', JSON.stringify(photoMap));
+  
+  alert('기록이 저장되었습니다!');
+  
+  // Return to travel mode
+  selectMode('travel');
 }
 
-function uploadToImgur(base64Image, callback) {
-  const base64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
-  fetch("https://api.imgur.com/3/image", {
-    method: "POST",
-    headers: {
-      Authorization: "Client-ID a0058fd0a6e3657",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      image: base64,
-      type: "base64"
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      callback(data.data.link);
-    } else {
-      alert("Imgur 업로드 실패");
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Imgur 업로드 오류 발생");
-  });
-}
-function savePhoto() {
-  const input = document.getElementById("photoInput");
+// Photo handling for record mode
+function saveRecordPhoto() {
+  const input = document.getElementById('recordPhotoInput');
   const files = input.files;
-  if (!files || !currentAddress) return;
-
-  if (!Array.isArray(photoMap[currentAddress])) photoMap[currentAddress] = [];
-  if (!Array.isArray(originalPhotoMap[currentAddress])) originalPhotoMap[currentAddress] = [];
-
-  const urls = photoMap[currentAddress];
-  if (urls.length >= 5) return alert("사진은 최대 5장까지 등록할 수 있습니다.");
-
+  if (!files || !AppState.currentAddress) return;
+  
+  if (!Array.isArray(photoMap[AppState.currentAddress])) {
+    photoMap[AppState.currentAddress] = [];
+  }
+  if (!Array.isArray(originalPhotoMap[AppState.currentAddress])) {
+    originalPhotoMap[AppState.currentAddress] = [];
+  }
+  
+  const urls = photoMap[AppState.currentAddress];
+  if (urls.length >= 5) {
+    alert('사진은 최대 5장까지 등록할 수 있습니다.');
+    return;
+  }
+  
   Array.from(files).forEach(file => {
-    if (!file.type.startsWith("image/")) return;
+    if (!file.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = async e => {
       const img = new Image();
       img.onload = async () => {
-        const canvas = document.createElement("canvas");
+        const canvas = document.createElement('canvas');
         const maxW = 800;
         const scale = maxW / img.width;
         canvas.width = maxW;
         canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const resized = canvas.toDataURL("image/jpeg", 0.8);
-
-        const uploaded = await uploadToImgur(resized);
-        if (!uploaded) return;
-
-        photoMap[currentAddress].push(uploaded);
-        originalPhotoMap[currentAddress].push(uploaded);
-        localStorage.setItem("photoMap", JSON.stringify(photoMap));
-        renderPhotos();
+        const resized = canvas.toDataURL('image/jpeg', 0.8);
+        
+        try {
+          const uploaded = await uploadToImgur(resized);
+          if (uploaded) {
+            photoMap[AppState.currentAddress].push(uploaded);
+            originalPhotoMap[AppState.currentAddress].push(uploaded);
+            localStorage.setItem('photoMap', JSON.stringify(photoMap));
+            renderRecordPhotos();
+          }
+        } catch (error) {
+          alert('사진 업로드 중 오류가 발생했습니다.');
+        }
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
-  // ✅ 파일 처리 후에 초기화
+  
   setTimeout(() => {
-    input.value = "";
+    input.value = '';
   }, 500);
 }
 
-
-// Imgur 업로드
-function uploadToImgur(base64Image) {
-  return fetch("https://api.imgur.com/3/image", {
-    method: "POST",
-    headers: {
-      Authorization: "Client-ID a0058fd0a6e3657",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      image: base64Image.split(",")[1], // 'data:image/jpeg;base64,...'에서 base64 부분만 추출
-      type: "base64"
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && data.data && data.data.link) {
-        return data.data.link;
-      } else {
-        throw new Error("Imgur 업로드 실패");
-      }
-    });
-}
-
-
-
-function showDropdown() {
-  const input = document.getElementById("addrInput");
-  const dropdown = document.getElementById("customDropdown");
-  const inputRect = input.getBoundingClientRect();
-  dropdown.innerHTML = "";
-  dropdown.style.top = input.offsetTop + input.offsetHeight + "px";
-  dropdown.style.left = input.offsetLeft + "px";
-  dropdown.style.display = "block";
-
-  주소목록.filter(addr => addr.includes(input.value)).forEach(addr => {
-    const div = document.createElement("div");
-    div.className = "dropdown-item";
-    if (viewedAddresses.has(addr)) div.classList.add("viewed");
-    if (statusMap[addr]) div.classList.add("status-marked");
-    if (memoMap[addr]) div.classList.add("memo-marked");
-
-    div.textContent = statusMap[addr] ? addr + " [" + statusMap[addr] + "]" : addr;
-    div.onclick = () => {
-      currentAddress = addr;
-      viewedAddresses.add(addr);
-      saveViewedAddresses();
-      document.getElementById("addrInput").value = addr;
-      document.getElementById("statusSelect").value = statusMap[addr] || "";
-
-      const value = statusMap[addr] || "";
-      const customInput = document.getElementById("customStatusInput");
-      if (!["출장완료", "미출장", ""].includes(value)) {
-        document.getElementById("statusSelect").value = "직접입력";
-        customInput.style.display = "block";
-        customInput.value = value;
-      } else {
-        customInput.style.display = "none";
-        customInput.value = "";
-      }
-
-      document.getElementById("memoInput").value = memoMap[addr] || "";
-      document.getElementById("memoSection").style.display = "block";
-
-      renderPhotos();
-
-      dropdown.style.display = "none";
-
-      if (!memoMode) openMapInNewTab();
-    };
-
-    dropdown.appendChild(div);
+function renderRecordPhotos() {
+  const container = document.getElementById('recordPhotoContainer');
+  if (!container || !AppState.currentAddress) return;
+  
+  container.innerHTML = '';
+  const photos = Array.isArray(photoMap[AppState.currentAddress]) ? photoMap[AppState.currentAddress] : [];
+  
+  photos.forEach((url, i) => {
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'photo-preview';
+    img.onclick = () => handleRecordPhotoClick(i);
+    container.appendChild(img);
   });
 }
+
+function handleRecordPhotoClick(index) {
+  const imgUrl = originalPhotoMap[AppState.currentAddress]?.[index];
+  if (!imgUrl) return;
   
+  const dialog = document.createElement('div');
+  dialog.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: white; padding: 20px; border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 9999;
+  `;
+  dialog.innerHTML = `
+    <p style="margin-bottom: 15px; text-align: center; font-weight: 600;">사진 옵션을 선택하세요</p>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button id="viewBtn" class="btn btn-primary">📷 크게 보기</button>
+      <button id="deleteBtn" class="btn btn-danger">❌ 삭제</button>
+      <button id="cancelBtn" class="btn btn-secondary">취소</button>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  
+  document.getElementById('viewBtn').onclick = () => {
+    const popup = window.open('', '_blank');
+    popup.document.write(`<img src='${imgUrl}' style='max-width:100%; height:auto;'>`);
+    document.body.removeChild(dialog);
+  };
+  document.getElementById('deleteBtn').onclick = () => {
+    deleteRecordPhoto(index);
+    document.body.removeChild(dialog);
+  };
+  document.getElementById('cancelBtn').onclick = () => {
+    document.body.removeChild(dialog);
+  };
+}
 
-  function openMapInNewTab() {
-  const addr = currentAddress || document.getElementById("addrInput").value.trim();
-  if (!addr) return alert("주소를 입력하세요.");
+function deleteRecordPhoto(index) {
+  if (!AppState.currentAddress || !photoMap[AppState.currentAddress]) return;
+  photoMap[AppState.currentAddress].splice(index, 1);
+  localStorage.setItem('photoMap', JSON.stringify(photoMap));
+  renderRecordPhotos();
+}
+  
+// Summary Mode Functions
+function updateSummaryMode() {
+  updateTable();
+  drawChart();
+}
 
-  const baseAddr = addr.replace(/\s*\([^)]*\)\s*$/, '').trim();
-  const encodedAddr = encodeURIComponent(baseAddr);
-  const mapType = preferredMap;
-
-  let url = "";
-  if (mapType === "naver") {
-    url = `https://map.naver.com/v5/search/${encodedAddr}`;
-  } else if (mapType === "kakao") {
-    url = `https://map.kakao.com/?q=${encodedAddr}`;
-  } else if (mapType === "google") {
-    url = `https://www.google.com/maps/search/?api=1&query=${encodedAddr}`;
+function updateTable() {
+  const tbody = document.getElementById('tableBody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  주소목록.forEach(addr => {
+    const rawStatus = statusMap[addr] || '미선택';
+    const classStatus = ['출장완료', '미출장', '미선택'].includes(rawStatus) ? rawStatus : '직접입력';
+    
+    const row = document.createElement('tr');
+    row.style.cssText = getStatusRowStyle(classStatus);
+    row.innerHTML = `
+      <td style="padding: 15px; border-bottom: 1px solid #e1e5e9;">${addr}</td>
+      <td style="padding: 15px; border-bottom: 1px solid #e1e5e9;">${rawStatus}</td>
+    `;
+    tbody.appendChild(row);
+  });
+  
+  // Update summary
+  const summary = document.getElementById('tableSummary');
+  if (summary) {
+    summary.textContent = `총 ${주소목록.length}건`;
   }
-
-  // ❌ 잘못된 무한 재귀 호출 제거
-  // ✅ 필요시 조건부 openMapInNewTab 호출은 외부에서 제어하도록
-  window.open(url, "_blank");
 }
 
-
-function handleStatusChange() {
-  const select = document.getElementById("statusSelect");
-  const customInput = document.getElementById("customStatusInput");
-  if (select.value === "직접입력") {
-    customInput.style.display = "block";
-  } else {
-    customInput.style.display = "none";
-    saveStatus();
+function getStatusRowStyle(status) {
+  switch(status) {
+    case '출장완료': return 'background-color: rgba(76, 175, 80, 0.1);';
+    case '미출장': return 'background-color: rgba(244, 67, 54, 0.1);';
+    case '미선택': return 'background-color: rgba(158, 158, 158, 0.1);';
+    default: return 'background-color: rgba(255, 193, 7, 0.1);';
   }
 }
- function saveAddressList() {
-  localStorage.setItem("addressList", JSON.stringify(주소목록));
-}
 
-
-function saveStatus() {
-  const select = document.getElementById("statusSelect");
-  const input = document.getElementById("customStatusInput");
-  let status = select.value;
-  if (status === "직접입력") {
-    status = input.value.trim().substring(0, 100);
+function drawChart() {
+  const ctx = document.getElementById('statusChart');
+  if (!ctx) return;
+  
+  const count = { 출장완료: 0, 미출장: 0, 미선택: 0, 직접입력: 0 };
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || '미선택';
+    const key = ['출장완료', '미출장', '미선택'].includes(status) ? status : '직접입력';
+    count[key]++;
+  });
+  
+  const data = {
+    labels: Object.keys(count),
+    datasets: [{
+      label: '상태별 개수',
+      data: Object.values(count),
+      backgroundColor: ['#4caf50', '#f44336', '#90a4ae', '#ffcc80'],
+      borderRadius: 8,
+      borderWidth: 0
+    }]
+  };
+  
+  if (window.myChart) window.myChart.destroy();
+  window.myChart = new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: data,
+    options: { 
+      responsive: true, 
+      plugins: { 
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: 'white',
+          bodyColor: 'white',
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+          borderWidth: 1,
+          cornerRadius: 8
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.1)'
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+  
+  const total = Object.values(count).reduce((a, b) => a + b, 0);
+  const statsCount = document.getElementById('statsCount');
+  const chartText = document.getElementById('chartTextOutput');
+  
+  if (statsCount) {
+    statsCount.textContent = `총 항목 수: ${total}건`;
   }
-  if (!currentAddress) return;
-  if (!status) delete statusMap[currentAddress];
-  else statusMap[currentAddress] = status;
-  localStorage.setItem("statusMap", JSON.stringify(statusMap));
+  if (chartText) {
+    chartText.textContent = Object.entries(count).map(([k,v]) => `${k}: ${v}건`).join(' / ');
+  }
 }
+
+function copyTable() {
+  let text = '주소\t상태\n';
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || '미선택';
+    text += addr + '\t' + status + '\n';
+  });
+  navigator.clipboard.writeText(text).then(() => alert('복사 완료'));
+}
+
+  
+function exportText() {
+  const wb = XLSX.utils.book_new();
+  const data = [['주소', '상태', '메모', '사진1', '사진2', '사진3', '사진4', '사진5']];
+  주소목록.forEach(addr => {
+    const status = statusMap[addr] || '미선택';
+    const memo = memoMap[addr] || '';
+    const photos = Array.isArray(photoMap[addr]) ? photoMap[addr] : [];
+    const limitedMemo = memo.length > 10000 ? memo.slice(0, 10000) + '...' : memo;
+    const row = [addr, status, limitedMemo, ...photos.slice(0, 5)];
+    while (row.length < 8) row.push('');
+    data.push(row);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  
+  // 사진 링크 셀에 하이퍼링크 추가
+  data.forEach((row, rowIndex) => {
+    if (rowIndex === 0) return;
+    for (let i = 3; i <= 7; i++) {
+      const cellAddr = XLSX.utils.encode_cell({ r: rowIndex, c: i });
+      const val = row[i];
+      if (val && typeof val === 'string') {
+        ws[cellAddr].l = { Target: val };
+      }
+    }
+  });
+  
+  XLSX.utils.book_append_sheet(wb, ws, '출장기록');
+  XLSX.writeFile(wb, '출장기록.xlsx');
+}
+
+  
+  // Utility Functions
+function saveMapPreference() {
+  preferredMap = document.getElementById('mapSelect').value;
+  if (document.getElementById('rememberMap') && document.getElementById('rememberMap').checked) {
+    localStorage.setItem('preferredMap', preferredMap);
+  }
+}
+
+function saveAddressList() {
+  localStorage.setItem('addressList', JSON.stringify(주소목록));
+}
+
 function saveViewedAddresses() {
-  localStorage.setItem("viewedAddresses", JSON.stringify([...viewedAddresses]));
+  localStorage.setItem('viewedAddresses', JSON.stringify([...viewedAddresses]));
 }
 
+function resetAddressList() {
+  if (!confirm('모든 주소 목록을 삭제하시겠습니까?')) return;
+  
+  주소목록 = [];
+  AppState.currentAddress = null;
+  saveAddressList();
+  updateAddressPreview();
+  updateTravelMode();
+  alert('주소 목록이 초기화되었습니다.');
+}
+
+function resetStatusMap() {
+  if (!confirm('모든 상태 정보를 삭제하시겠습니까?')) return;
+  
+  statusMap = {};
+  localStorage.removeItem('statusMap');
+  alert('상태 정보가 초기화되었습니다.');
+}
+
+// File handling functions
 function loadAddressFile(event) {
   const file = event.target.files[0];
   if (!file) return;
-
+  
   const reader = new FileReader();
   reader.onload = function(e) {
     const lines = e.target.result.split(/\r?\n/).filter(line => line.trim());
     const newList = [];
     let added = 0;
-
+    
     lines.forEach(line => {
       const [addr, status] = line.split('\t');
       const trimmedAddr = addr?.trim();
@@ -713,98 +1806,260 @@ function loadAddressFile(event) {
         statusMap[trimmedAddr] = status.trim();
       }
     });
-
+    
     주소목록 = [...주소목록, ...newList];
     alert(`주소 파일 업로드 완료: ${lines.length}건 중 ${added}건 추가됨 (총 ${주소목록.length}건)`);
-
-    // ✅ 여기에 저장 로직 포함
+    
     saveAddressList();
-    localStorage.setItem("statusMap", JSON.stringify(statusMap));
+    localStorage.setItem('statusMap', JSON.stringify(statusMap));
+    nextStep(3);
   };
-
+  
   reader.readAsText(file, 'UTF-8');
 }
 
 function addFromTextarea() {
-  const input = document.getElementById("bulkPaste").value;
-  if (!input) return;
+  const input = document.getElementById('bulkPaste').value;
+  if (!input) {
+    alert('주소를 입력해주세요.');
+    return;
+  }
+  
   const lines = input.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const newList = lines.filter(l => !주소목록.includes(l));
   주소목록 = [...주소목록, ...newList];
   saveAddressList();
+  
   alert(`${newList.length}개의 주소가 추가되었습니다.`);
-  document.getElementById("bulkPaste").value = "";
+  document.getElementById('bulkPaste').value = '';
+  nextStep(3);
 }
 
-function resetAddressList() {
-  주소목록 = [];
-  currentAddress = null;
-  document.getElementById("addrInput").value = "";
-  document.getElementById("customDropdown").innerHTML = "";
+// Imgur upload function
+function uploadToImgur(base64Image) {
+  return fetch('https://api.imgur.com/3/image', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Client-ID a0058fd0a6e3657',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      image: base64Image.split(',')[1],
+      type: 'base64'
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success && data.data && data.data.link) {
+      return data.data.link;
+    } else {
+      throw new Error('Imgur 업로드 실패');
+    }
+  });
+}
+
+// Initialize app on page load
+// Data Management Functions
+let selectedAddressesForReset = new Set();
+
+function updateDataStatus() {
+  const totalAddresses = document.getElementById('total-addresses');
+  if (totalAddresses) {
+    totalAddresses.textContent = 주소목록.length;
+  }
+}
+
+function showDataOptions() {
+  document.getElementById('dataModal').classList.add('show');
+}
+
+function showResetOptions() {
+  document.getElementById('dataModal').classList.remove('show');
+  document.getElementById('resetModal').classList.add('show');
+}
+
+function showAddressSelector() {
+  if (주소목록.length === 0) {
+    alert('삭제할 출장지가 없습니다.');
+    return;
+  }
+  
+  document.getElementById('resetModal').classList.remove('show');
+  document.getElementById('addressSelectorModal').classList.add('show');
+  
+  // Populate address list
+  const container = document.getElementById('address-selector-list');
+  container.innerHTML = '';
+  
+  주소목록.forEach((addr, index) => {
+    const status = statusMap[addr] || '미선택';
+    const hasData = statusMap[addr] || memoMap[addr] || (photoMap[addr] && photoMap[addr].length > 0);
+    
+    const item = document.createElement('div');
+    item.className = 'option-card';
+    item.style.cssText = `
+      padding: 15px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      border: 2px solid #e1e5e9;
+      transition: all 0.3s ease;
+      ${selectedAddressesForReset.has(addr) ? 'border-color: #e74c3c; background: rgba(231, 76, 60, 0.1);' : ''}
+    `;
+    
+    item.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 600; margin-bottom: 5px;">${addr}</div>
+          <div style="font-size: 0.9rem; color: #666;">
+            상태: ${status}
+            ${hasData ? ' • 기록 있음' : ' • 기록 없음'}
+          </div>
+        </div>
+        <div style="font-size: 1.2rem;">
+          ${selectedAddressesForReset.has(addr) ? '✓' : '○'}
+        </div>
+      </div>
+    `;
+    
+    item.onclick = () => toggleAddressSelection(addr, item);
+    container.appendChild(item);
+  });
+}
+
+function toggleAddressSelection(address, element) {
+  if (selectedAddressesForReset.has(address)) {
+    selectedAddressesForReset.delete(address);
+    element.style.borderColor = '#e1e5e9';
+    element.style.background = '';
+    element.querySelector('div:last-child').textContent = '○';
+  } else {
+    selectedAddressesForReset.add(address);
+    element.style.borderColor = '#e74c3c';
+    element.style.background = 'rgba(231, 76, 60, 0.1)';
+    element.querySelector('div:last-child').textContent = '✓';
+  }
+  
+  // Show/hide reset button
+  const resetBtn = document.getElementById('reset-selected-btn');
+  if (selectedAddressesForReset.size > 0) {
+    resetBtn.style.display = 'block';
+    resetBtn.textContent = `🗑️ 선택된 ${selectedAddressesForReset.size}개 항목 삭제`;
+  } else {
+    resetBtn.style.display = 'none';
+  }
+}
+
+function resetSelectedAddresses() {
+  if (selectedAddressesForReset.size === 0) return;
+  
+  const confirmMsg = `선택된 ${selectedAddressesForReset.size}개 출장지의 모든 데이터를 삭제하시겠습니까?\n\n삭제될 항목:\n${Array.from(selectedAddressesForReset).join('\n')}\n\n이 작업은 취소할 수 없습니다.`;
+  
+  if (!confirm(confirmMsg)) return;
+  
+  // Remove selected addresses from all data structures
+  selectedAddressesForReset.forEach(addr => {
+    const index = 주소목록.indexOf(addr);
+    if (index > -1) {
+      주소목록.splice(index, 1);
+    }
+    delete statusMap[addr];
+    delete memoMap[addr];
+    delete photoMap[addr];
+    delete originalPhotoMap[addr];
+    viewedAddresses.delete(addr);
+  });
+  
+  // Save to localStorage
   saveAddressList();
-  alert("주소 목록이 초기화되었습니다.");
+  localStorage.setItem('statusMap', JSON.stringify(statusMap));
+  localStorage.setItem('memoMap', JSON.stringify(memoMap));
+  localStorage.setItem('photoMap', JSON.stringify(photoMap));
+  saveViewedAddresses();
+  
+  // Reset selection
+  selectedAddressesForReset.clear();
+  
+  // Update UI
+  updateDataStatus();
+  updateAddressPreview();
+  updateTravelMode();
+  
+  alert(`선택된 출장지 데이터가 삭제되었습니다.`);
+  closeModal();
 }
 
-function resetStatusMap() {
+function confirmFullReset() {
+  const confirmMsg = '모든 출장지와 기록을 완전히 삭제하시겠습니까?\n\n다음 데이터가 모두 삭제됩니다:\n- 모든 출장지 목록\n- 모든 출장 상태\n- 모든 메모\n- 모든 사진\n\n이 작업은 취소할 수 없습니다.';
+  
+  if (!confirm(confirmMsg)) return;
+  
+  // Clear all data
+  주소목록 = [];
   statusMap = {};
-  localStorage.removeItem("statusMap");
-  alert("상태 정보가 초기화되었습니다.");
+  memoMap = {};
+  photoMap = {};
+  viewedAddresses.clear();
+  AppState.currentAddress = null;
+  
+  // Clear localStorage
+  localStorage.removeItem('addressList');
+  localStorage.removeItem('statusMap');
+  localStorage.removeItem('memoMap');
+  localStorage.removeItem('photoMap');
+  localStorage.removeItem('viewedAddresses');
+  
+  // Update UI
+  updateDataStatus();
+  updateAddressPreview();
+  updateTravelMode();
+  
+  alert('모든 데이터가 삭제되었습니다.');
+  closeModal();
 }
 
-function updateTable() {
-  const tbody = document.getElementById("tableBody");
-  tbody.innerHTML = "";
-  주소목록.forEach(addr => {
-    const rawStatus = statusMap[addr] || "미선택";
-    const classStatus = ["출장완료", "미출장", "미선택"].includes(rawStatus)
-      ? rawStatus
-      : "직접입력";  // 직접입력은 전부 같은 배경색 적용
-
-    const row = document.createElement("tr");
-    row.className = `status-${classStatus}`;
-    row.innerHTML = `<td>${addr}</td><td>${rawStatus}</td>`;
-    tbody.appendChild(row);
-  });
+function continueWithExistingData() {
+  closeModal();
 }
 
-
-function copyTable() {
-  let text = "주소\t상태\n";
-  주소목록.forEach(addr => {
-    const status = statusMap[addr] || "미선택";
-    text += addr + "\t" + status + "\n";
+function closeModal() {
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.classList.remove('show');
   });
-  navigator.clipboard.writeText(text).then(() => alert("복사 완료"));
+  selectedAddressesForReset.clear();
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+  // Set initial map preference
+  document.getElementById('mapSelect').value = preferredMap;
+  
+  // Update data status
+  updateDataStatus();
+  
+  // Initialize first mode
+  selectMode('prepare');
+  
+  // Update previews if data exists
+  if (주소목록.length > 0) {
+    updateAddressPreview();
+  }
+  
+  // Initialize map selection UI
+  updateMapSelection();
+});
 
-function drawChart() {
-  const ctx = document.getElementById("statusChart").getContext("2d");
-  const count = { 출장완료: 0, 미출장: 0, 미선택: 0, 직접입력: 0 };
-  주소목록.forEach(addr => {
-    const status = statusMap[addr] || "미선택";
-    const key = ["출장완료", "미출장", "미선택"].includes(status) ? status : "직접입력";
-    count[key]++;
-  });
-  const data = {
-    labels: Object.keys(count),
-    datasets: [{
-      label: '상태별 개수',
-      data: Object.values(count),
-      backgroundColor: ['#4caf50', '#f44336', '#90a4ae', '#ffcc80']
-    }]
-  };
-  if (window.myChart) window.myChart.destroy();
-  window.myChart = new Chart(ctx, {
-    type: 'bar',
-    data: data,
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-  const total = Object.values(count).reduce((a, b) => a + b, 0);
-  document.getElementById("statsCount").innerText = `총 항목 수: ${total}건`;
-  document.getElementById("chartTextOutput").innerText =
-    Object.entries(count).map(([k,v]) => `${k}: ${v}건`).join(' / ');
-}
+
+// Legacy compatibility functions (empty implementations)
+function showTab() {} // No longer used
+function saveMemo() {} // Replaced by saveRecord
+function showDropdown() {} // No longer used
+function handleStatusChange() {} // Replaced by handleRecordStatusChange
+function saveStatus() {} // Replaced by saveRecord
+function openMapInNewTab() {} // Replaced by openMapForAddress
+function updateTable() {} // Moved to updateSummaryMode
+function drawChart() {} // Moved to updateSummaryMode
+
+
 </script>
 </body>
 </html>
+
