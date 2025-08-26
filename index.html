@@ -499,6 +499,8 @@
       padding: 30px;
       max-width: 500px;
       width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
     
@@ -629,6 +631,20 @@
       .map-name {
         font-size: 0.85rem !important;
       }
+      
+      .modal-content {
+        padding: 20px;
+        max-height: 85vh;
+        width: 95%;
+      }
+      
+      .modal-title {
+        font-size: 1.3rem;
+      }
+      
+      .modal-subtitle {
+        font-size: 0.9rem;
+      }
     }
     
     @media (max-width: 480px) {
@@ -656,11 +672,30 @@
       
       .step {
         width: 35px;
-        height: 35px;
       }
       
-      .step-line {
-        width: 20px;
+      .modal-content {
+        padding: 15px;
+        max-height: 90vh;
+        width: 98%;
+        margin: 5vh auto;
+      }
+      
+      .modal-title {
+        font-size: 1.2rem;
+      }
+      
+      .modal-subtitle {
+        font-size: 0.85rem;
+      }
+      
+      .form-group {
+        margin-bottom: 15px !important;
+      }
+      
+      .form-input {
+        padding: 12px !important;
+        font-size: 16px !important; /* Prevents zoom on iOS */
       }
     }
     
@@ -1351,16 +1386,40 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 async function geocodeAddress(address) {
   // Check cache first
   if (coordinatesCache[address]) {
-    return coordinatesCache[address];
+    // Validate cached coordinates
+    const cached = coordinatesCache[address];
+    if (cached && cached.lat && cached.lng && 
+        cached.lat >= 37.4 && cached.lat <= 37.7 && 
+        cached.lng >= 126.8 && cached.lng <= 127.3) {
+      return cached;
+    }
+    // Invalid cache, remove it
+    delete coordinatesCache[address];
   }
 
   const cleanAddress = address.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  addDebugLog('주소 좌표 변환 시작', { original: address, clean: cleanAddress });
   
   try {
-    // Note: For production use, integrate with Kakao Maps API
-    // Users can get free API key from https://developers.kakao.com/
+    // Try Kakao Maps API first (most accurate for Korean addresses)
+    const kakaoResult = await geocodeWithKakao(cleanAddress);
+    if (kakaoResult) {
+      coordinatesCache[address] = kakaoResult;
+      localStorage.setItem("coordinatesCache", JSON.stringify(coordinatesCache));
+      addDebugLog('카카오 API 좌표 변환 성공', { address, coordinates: kakaoResult });
+      return kakaoResult;
+    }
+
+    // Fallback to OpenStreetMap Nominatim (free, no API key required)
+    const nominatimResult = await geocodeWithNominatim(cleanAddress + ' 서울');
+    if (nominatimResult) {
+      coordinatesCache[address] = nominatimResult;
+      localStorage.setItem("coordinatesCache", JSON.stringify(coordinatesCache));
+      addDebugLog('Nominatim API 좌표 변환 성공', { address, coordinates: nominatimResult });
+      return nominatimResult;
+    }
   } catch (error) {
-    console.error('Geocoding error:', error);
+    addDebugLog('API 좌표 변환 실패', { error: error.message });
   }
 
   // Enhanced address-specific coordinate mapping
@@ -1407,31 +1466,108 @@ async function geocodeAddress(address) {
   }
 
   if (bestMatch) {
-    // Add small random offset to avoid identical coordinates
+    // Add deterministic offset based on address hash to avoid identical coordinates
+    const hash = address.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0);
     const offset = {
-      lat: bestMatch.lat + (Math.random() - 0.5) * 0.005,
-      lng: bestMatch.lng + (Math.random() - 0.5) * 0.005
+      lat: bestMatch.lat + ((hash % 1000) / 100000) - 0.005,
+      lng: bestMatch.lng + (((hash * 17) % 1000) / 100000) - 0.005
     };
     coordinatesCache[address] = offset;
     localStorage.setItem("coordinatesCache", JSON.stringify(coordinatesCache));
+    addDebugLog('로컬 매핑으로 좌표 추정', { address, coordinates: offset });
     return offset;
   }
 
-  // Final fallback to Gwangjin District Office with random offset
+  // Final fallback to Gwangjin District Office with deterministic offset
+  const hash = address.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0);
   const defaultCoord = { 
-    lat: 37.5385 + (Math.random() - 0.5) * 0.01, 
-    lng: 127.0823 + (Math.random() - 0.5) * 0.01 
+    lat: 37.5385 + ((hash % 2000) / 100000) - 0.01,
+    lng: 127.0823 + (((hash * 13) % 2000) / 100000) - 0.01
   };
   coordinatesCache[address] = defaultCoord;
   localStorage.setItem("coordinatesCache", JSON.stringify(coordinatesCache));
+  addDebugLog('기본 좌표로 폴백', { address, coordinates: defaultCoord });
   return defaultCoord;
 }
 
-// Nearest neighbor heuristic for TSP
-function optimizeRouteNearestNeighbor(addresses, startAddress) {
-  if (addresses.length <= 1) return addresses;
+// Kakao Maps API geocoding
+async function geocodeWithKakao(address) {
+  try {
+    // Kakao API key for geocoding
+    const KAKAO_API_KEY = '2a882357d1de5851b77f3eaf014862dd';
+    
+    if (KAKAO_API_KEY === 'YOUR_KAKAO_API_KEY') {
+      addDebugLog('카카오 API 키 미설정 - 건너뜀');
+      return null;
+    }
+    
+    const response = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
+      headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    if (data.documents && data.documents.length > 0) {
+      const result = data.documents[0];
+      return {
+        lat: parseFloat(result.y || result.address?.y),
+        lng: parseFloat(result.x || result.address?.x)
+      };
+    }
+  } catch (error) {
+    addDebugLog('카카오 API 오류', { error: error.message });
+  }
+  return null;
+}
 
-  const unvisited = [...addresses];
+// OpenStreetMap Nominatim geocoding (free, no API key required)
+async function geocodeWithNominatim(address) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`, {
+      headers: { 'User-Agent': 'Jinculro/1.0' }
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon)
+      };
+    }
+  } catch (error) {
+    addDebugLog('Nominatim API 오류', { error: error.message });
+  }
+  return null;
+}
+
+// Improved Nearest neighbor with validation and error handling
+function optimizeRouteNearestNeighbor(addresses, startAddress) {
+  if (!addresses || addresses.length <= 1) {
+    addDebugLog('NN 최적화: 주소가 부족함', { addresses });
+    return addresses || [];
+  }
+
+  // Validate coordinates exist
+  const validAddresses = addresses.filter(addr => {
+    const coord = coordinatesCache[addr];
+    return coord && coord.lat && coord.lng;
+  });
+
+  if (validAddresses.length === 0) {
+    addDebugLog('NN 최적화: 유효한 좌표 없음');
+    return addresses;
+  }
+
+  addDebugLog('NN 최적화 시작', { 
+    total: addresses.length, 
+    valid: validAddresses.length,
+    start: startAddress 
+  });
+
+  const unvisited = [...validAddresses];
   const route = [];
   let current = startAddress;
 
@@ -1441,12 +1577,21 @@ function optimizeRouteNearestNeighbor(addresses, startAddress) {
     unvisited.splice(startIndex, 1);
   }
 
-  while (unvisited.length > 0) {
-    let nearestIndex = 0;
+  let iterations = 0;
+  const maxIterations = validAddresses.length * 2; // Safety limit
+
+  while (unvisited.length > 0 && iterations < maxIterations) {
+    iterations++;
+    let nearestIndex = -1;
     let shortestDistance = Infinity;
 
     const currentCoord = coordinatesCache[current];
-    if (!currentCoord) break;
+    if (!currentCoord) {
+      addDebugLog('NN 최적화: 현재 위치 좌표 없음', { current });
+      // Use first unvisited as fallback
+      current = unvisited[0];
+      continue;
+    }
 
     for (let i = 0; i < unvisited.length; i++) {
       const nextCoord = coordinatesCache[unvisited[i]];
@@ -1463,10 +1608,23 @@ function optimizeRouteNearestNeighbor(addresses, startAddress) {
       }
     }
 
+    if (nearestIndex === -1) {
+      addDebugLog('NN 최적화: 다음 위치를 찾을 수 없음');
+      // Add remaining addresses in original order
+      route.push(...unvisited);
+      break;
+    }
+
     current = unvisited[nearestIndex];
     route.push(current);
     unvisited.splice(nearestIndex, 1);
   }
+
+  addDebugLog('NN 최적화 완료', { 
+    originalLength: addresses.length,
+    optimizedLength: route.length,
+    iterations
+  });
 
   return route;
 }
@@ -1488,37 +1646,87 @@ function calculateTotalDistance(route) {
 
 // Advanced Route Optimization Algorithms
 
-// 2-opt optimization algorithm to improve existing route
-function optimize2Opt(route, maxIterations = 100) {
-  if (route.length < 4) return route;
+// Enhanced 2-opt optimization with better performance
+function optimize2Opt(route, maxIterations = 200) {
+  if (!route || route.length < 4) {
+    addDebugLog('2-opt: 루트가 너무 짧음', { length: route?.length });
+    return route || [];
+  }
+  
+  addDebugLog('2-opt 최적화 시작', { 
+    routeLength: route.length, 
+    maxIterations 
+  });
   
   let bestRoute = [...route];
   let bestDistance = calculateTotalDistance(bestRoute);
+  
+  if (bestDistance === 0) {
+    addDebugLog('2-opt: 초기 거리 계산 실패');
+    return route;
+  }
   let improved = true;
   let iteration = 0;
+  let improvementsCount = 0;
+  const initialDistance = bestDistance;
   
   while (improved && iteration < maxIterations) {
     improved = false;
     
-    for (let i = 1; i < route.length - 2; i++) {
-      for (let j = i + 1; j < route.length - 1; j++) {
-        // Create new route by reversing segment between i and j
-        const newRoute = [...bestRoute];
-        const segment = newRoute.slice(i, j + 1).reverse();
-        newRoute.splice(i, j - i + 1, ...segment);
+    // Early termination if no significant improvement
+    if (iteration > 50 && improvementsCount === 0) break;
+    
+    for (let i = 1; i < bestRoute.length - 2; i++) {
+      for (let j = i + 1; j < bestRoute.length - 1; j++) {
+        // Calculate current segment distances
+        const currentDist = calculateSegmentDistance(bestRoute, i-1, i, j, j+1);
         
-        const newDistance = calculateTotalDistance(newRoute);
-        if (newDistance < bestDistance) {
+        // Calculate reversed segment distances  
+        const reversedDist = calculateReversedSegmentDistance(bestRoute, i-1, i, j, j+1);
+        
+        if (reversedDist < currentDist) {
+          // Apply 2-opt swap
+          const newRoute = [...bestRoute];
+          const segment = newRoute.slice(i, j + 1).reverse();
+          newRoute.splice(i, j - i + 1, ...segment);
+          
           bestRoute = newRoute;
-          bestDistance = newDistance;
+          bestDistance = calculateTotalDistance(bestRoute);
           improved = true;
+          improvementsCount++;
         }
       }
     }
     iteration++;
   }
   
+  const improvement = ((initialDistance - bestDistance) / initialDistance * 100).toFixed(1);
+  addDebugLog('2-opt 최적화 완료', { 
+    iterations: iteration,
+    improvements: improvementsCount,
+    initialDistance: initialDistance.toFixed(2) + 'km',
+    finalDistance: bestDistance.toFixed(2) + 'km',
+    improvement: improvement + '%'
+  });
+  
   return bestRoute;
+}
+
+// Helper function for 2-opt segment distance calculation
+function calculateSegmentDistance(route, a, b, c, d) {
+  const coords = [route[a], route[b], route[c], route[d]].map(addr => coordinatesCache[addr]);
+  if (coords.some(coord => !coord)) return Infinity;
+  
+  return calculateDistance(coords[0].lat, coords[0].lng, coords[1].lat, coords[1].lng) +
+         calculateDistance(coords[2].lat, coords[2].lng, coords[3].lat, coords[3].lng);
+}
+
+function calculateReversedSegmentDistance(route, a, b, c, d) {
+  const coords = [route[a], route[c], route[b], route[d]].map(addr => coordinatesCache[addr]);
+  if (coords.some(coord => !coord)) return Infinity;
+  
+  return calculateDistance(coords[0].lat, coords[0].lng, coords[1].lat, coords[1].lng) +
+         calculateDistance(coords[2].lat, coords[2].lng, coords[3].lat, coords[3].lng);
 }
 
 // K-means clustering for grouping nearby addresses
@@ -1733,58 +1941,102 @@ function mutate(route, mutationRate) {
 
 // Real-world practical route optimizer for Gwangjin District
 function optimizeRouteMultiAlgorithm(addresses, startAddress) {
-  if (addresses.length <= 1) return addresses;
-  
+  if (!addresses || addresses.length <= 1) {
+    addDebugLog('다중알고리즘: 주소 부족', { addresses });
+    return { method: '주소 부족', route: addresses || [], distance: 0 };
+  }
+
+  addDebugLog('다중 알고리즘 최적화 시작', {
+    addressCount: addresses.length,
+    startAddress,
+    hasValidCoords: addresses.filter(addr => coordinatesCache[addr]).length
+  });
+
   const results = [];
   
-  // Algorithm 1: Geography-aware Seoul routing
-  const geoResult = optimizeRouteGeographyAware(addresses, startAddress);
-  const geoDistance = calculateTotalDistance([startAddress, ...geoResult, startAddress]);
-  results.push({
-    method: '지리 기반 최적화 (서울 특화)',
-    route: geoResult,
-    distance: geoDistance
-  });
+  try {
+    // Algorithm 1: Enhanced Nearest Neighbor
+    const nnResult = optimizeRouteNearestNeighbor(addresses, startAddress);
+    const nnOptimized = optimize2Opt(nnResult); // Apply 2-opt improvement
+    const nnDistance = calculateTotalDistance([startAddress, ...nnOptimized, startAddress]);
+    
+    if (nnDistance > 0) {
+      results.push({
+        method: '개선된 Nearest Neighbor + 2-opt',
+        route: nnOptimized,
+        distance: nnDistance
+      });
+    }
+
+    // Algorithm 2: Geography-aware Seoul routing  
+    const geoResult = optimizeRouteGeographyAware(addresses, startAddress);
+    const geoDistance = calculateTotalDistance([startAddress, ...geoResult, startAddress]);
+    
+    if (geoDistance > 0) {
+      results.push({
+        method: '지리 기반 최적화 (서울 특화)',
+        route: geoResult,
+        distance: geoDistance
+      });
+    }
+    
+    // Algorithm 3: Sector-based routing
+    const sectorResult = optimizeRouteSectorBased(addresses, startAddress);
+    const sectorDistance = calculateTotalDistance([startAddress, ...sectorResult, startAddress]);
+    
+    if (sectorDistance > 0) {
+      results.push({
+        method: '구역별 순회 (택배 방식)',
+        route: sectorResult,
+        distance: sectorDistance
+      });
+    }
+
+    // Algorithm 4: Traffic-aware routing
+    if (addresses.length <= 15) { // Only for smaller sets due to complexity
+      const trafficResult = optimizeRouteTrafficAware(addresses, startAddress);
+      const trafficDistance = calculateTotalDistance([startAddress, ...trafficResult, startAddress]);
+      
+      if (trafficDistance > 0) {
+        results.push({
+          method: '교통 고려 최적화',
+          route: trafficResult,
+          distance: trafficDistance
+        });
+      }
+    }
+
+  } catch (error) {
+    addDebugLog('알고리즘 실행 오류', { error: error.message });
+  }
+
+  // Filter out invalid results and ensure we have at least one result
+  const validResults = results.filter(r => r.distance > 0 && r.route.length > 0);
   
-  // Algorithm 2: Sector-based routing (like delivery services)
-  const sectorResult = optimizeRouteSectorBased(addresses, startAddress);
-  const sectorDistance = calculateTotalDistance([startAddress, ...sectorResult, startAddress]);
-  results.push({
-    method: '구역별 순회 (택배 방식)',
-    route: sectorResult,
-    distance: sectorDistance
-  });
-  
-  // Algorithm 3: Traffic-aware routing
-  const trafficResult = optimizeRouteTrafficAware(addresses, startAddress);
-  const trafficDistance = calculateTotalDistance([startAddress, ...trafficResult, startAddress]);
-  results.push({
-    method: '교통 고려 최적화',
-    route: trafficResult,
-    distance: trafficDistance
-  });
-  
-  // Algorithm 4: Hierarchical road routing
-  const hierarchicalResult = optimizeRouteHierarchical(addresses, startAddress);
-  const hierarchicalDistance = calculateTotalDistance([startAddress, ...hierarchicalResult, startAddress]);
-  results.push({
-    method: '도로 위계 기반 (간선→지선)',
-    route: hierarchicalResult,
-    distance: hierarchicalDistance
-  });
-  
-  // Algorithm 5: Traditional algorithms for comparison
-  const nnResult = optimizeRouteNearestNeighbor(addresses, startAddress);
-  const nnDistance = calculateTotalDistance([startAddress, ...nnResult, startAddress]);
-  results.push({
-    method: 'Nearest Neighbor (기존)',
-    route: nnResult,
-    distance: nnDistance
-  });
-  
+  if (validResults.length === 0) {
+    addDebugLog('유효한 최적화 결과 없음 - 원본 순서 반환');
+    return {
+      method: '최적화 실패 (원본 순서)', 
+      route: addresses, 
+      distance: calculateTotalDistance([startAddress, ...addresses, startAddress])
+    };
+  }
+
   // Return best result
-  results.sort((a, b) => a.distance - b.distance);
-  return results[0];
+  validResults.sort((a, b) => a.distance - b.distance);
+  const bestResult = validResults[0];
+
+  addDebugLog('다중 알고리즘 최적화 결과', {
+    totalAlgorithms: results.length,
+    validResults: validResults.length,
+    bestMethod: bestResult.method,
+    bestDistance: bestResult.distance.toFixed(2) + 'km',
+    improvement: validResults.length > 1 ? 
+      ((validResults[validResults.length-1].distance - bestResult.distance) / validResults[validResults.length-1].distance * 100).toFixed(1) + '%' : 
+      'N/A'
+  });
+
+  return bestResult;
 }
 
 // Geography-aware routing for Seoul metropolitan area
@@ -3826,7 +4078,9 @@ async function performAdvancedOptimization(startAddress, destinations) {
     if (existingCoords.length > 1) {
       const firstCoord = existingCoords[0];
       const allSame = existingCoords.every(coord => 
-        coord.lat === firstCoord.lat && coord.lng === firstCoord.lng
+        coord && firstCoord && 
+        Math.abs(coord.lat - firstCoord.lat) < 0.0001 && 
+        Math.abs(coord.lng - firstCoord.lng) < 0.0001
       );
       if (allSame) {
         addDebugLog('동일 좌표 감지 - 캐시 강제 초기화');
@@ -3841,15 +4095,43 @@ async function performAdvancedOptimization(startAddress, destinations) {
     
     addDebugLog('좌표 캐시 상태', { coordinatesCache });
     
-    // 2단계: 다중 알고리즘 최적 경로 계산
+    // 2단계: 최적화 전 좌표 검증
+    const validCoordCount = allAddresses.filter(addr => {
+      const coord = coordinatesCache[addr];
+      return coord && coord.lat && coord.lng;
+    }).length;
+
+    if (validCoordCount < allAddresses.length) {
+      addDebugLog('좌표 변환 불완전', { 
+        total: allAddresses.length, 
+        valid: validCoordCount 
+      });
+      
+      // fallback 전략 실행
+      if (validCoordCount === 0) {
+        addDebugLog('모든 좌표 변환 실패 - 지리적 fallback 사용');
+        return getGeographicFallback(destinations, startAddress);
+      }
+    }
+
+    // 3단계: 다중 알고리즘 최적 경로 계산
     const optimizationResult = optimizeRouteMultiAlgorithm(destinations, startAddress);
+    
+    if (!optimizationResult || !optimizationResult.route) {
+      addDebugLog('다중 알고리즘 실패 - 지리적 fallback 사용');
+      return getGeographicFallback(destinations, startAddress);
+    }
     
     addDebugLog('다중 알고리즘 TSP 최적화 완료', {
       originalOrder: destinations,
       bestMethod: optimizationResult.method,
       optimizedRoute: optimizationResult.route,
-      totalDistance: `${optimizationResult.distance.toFixed(2)}km`
+      totalDistance: `${optimizationResult.distance.toFixed(2)}km`,
+      coordinatesFilled: validCoordCount + '/' + allAddresses.length
     });
+    
+    // 4단계: 결과 검증
+    const optimizationQuality = validateOptimization(destinations, optimizationResult.route, startAddress);
     
     // 결과 반환
     return {
@@ -3858,13 +4140,103 @@ async function performAdvancedOptimization(startAddress, destinations) {
       optimalOrder: optimizationResult.route,
       totalDistance: optimizationResult.distance.toFixed(2),
       addresses: optimizationResult.route,
-      method: optimizationResult.method
+      method: optimizationResult.method,
+      quality: optimizationQuality,
+      coordsAvailable: validCoordCount + '/' + allAddresses.length
     };
     
   } catch (error) {
-    addDebugLog('고급 최적화 실패', { error: error.message });
-    return { success: false, error: error.message };
+    addDebugLog('고급 최적화 오류', { error: error.message });
+    
+    // Complete fallback
+    try {
+      return getGeographicFallback(destinations, startAddress);
+    } catch (fallbackError) {
+      addDebugLog('Fallback 실패', { error: fallbackError.message });
+      return { 
+        success: false, 
+        error: error.message,
+        fallbackError: fallbackError.message,
+        route: destinations // Return original order as last resort
+      };
+    }
   }
+}
+
+// Geographic fallback strategy when APIs fail
+function getGeographicFallback(destinations, startAddress) {
+  addDebugLog('지리적 fallback 전략 실행');
+  
+  if (!destinations || destinations.length === 0) {
+    return { 
+      success: false, 
+      error: 'No destinations provided',
+      route: []
+    };
+  }
+
+  // Simple geographic sorting based on address patterns
+  const sortedDest = [...destinations].sort((a, b) => {
+    const aScore = getGeographicScore(a);
+    const bScore = getGeographicScore(b);
+    return aScore - bScore;
+  });
+
+  const fallbackDistance = calculateApproximateDistance(sortedDest);
+
+  return {
+    success: true,
+    coordinates: {},
+    optimalOrder: sortedDest,
+    totalDistance: fallbackDistance.toFixed(2),
+    addresses: sortedDest,
+    method: '지리적 Fallback (API 없음)',
+    quality: 'Estimated'
+  };
+}
+
+function getGeographicScore(address) {
+  // Priority scoring based on typical Seoul/Gwangjin geography
+  const scores = {
+    '구의강변로': 1,
+    '능동로': 2, 
+    '뚝섬로': 3,
+    '아차산로': 4,
+    '용마산로': 5,
+    '동일로': 6
+  };
+
+  for (const [pattern, score] of Object.entries(scores)) {
+    if (address.includes(pattern)) return score;
+  }
+  return 50; // Default middle score
+}
+
+function calculateApproximateDistance(addresses) {
+  // Rough estimation based on address count and patterns
+  return addresses.length * 1.2; // ~1.2km average between locations
+}
+
+// Validate optimization quality
+function validateOptimization(original, optimized, startAddress) {
+  if (!optimized || optimized.length !== original.length) {
+    return 'Invalid - length mismatch';
+  }
+
+  const originalSet = new Set(original);
+  const optimizedSet = new Set(optimized);
+  
+  if (originalSet.size !== optimizedSet.size) {
+    return 'Invalid - address mismatch';
+  }
+
+  for (const addr of original) {
+    if (!optimizedSet.has(addr)) {
+      return 'Invalid - missing address';
+    }
+  }
+
+  return 'Valid';
 }
 
 // Simple fallback route optimization algorithm
