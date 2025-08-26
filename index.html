@@ -262,6 +262,16 @@
       background: #138496;
     }
     
+    .btn-warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    
+    .btn-warning:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
+    }
+    
     .btn-full {
       width: 100%;
     }
@@ -617,6 +627,11 @@
       
       .btn {
         padding: 12px 20px;
+      }
+      
+      .card-header .btn {
+        padding: 6px 10px !important;
+        font-size: 0.8rem !important;
       }
       
       .map-button-selector {
@@ -1024,8 +1039,8 @@ tr.status-직접입력 {
         <div class="card-header">
           <span class="card-icon">🚗</span>
           <h3 class="card-title">출장지 목록</h3>
-          <button class="btn btn-success" onclick="showOptimalRouteModal()" style="margin-left: auto; padding: 8px 16px; font-size: 0.9rem;" title="AI가 최적 경로를 추천합니다">
-            🗺️ 최적경로 추천
+          <button class="btn btn-warning" onclick="showOptimalRouteModal()" style="flex: 1; padding: 10px; margin-left: 10px; max-width: 140px;" title="AI가 최적 경로를 추천합니다">
+            🎯 최적경로 추천
           </button>
         </div>
         <div class="card-content">
@@ -1042,6 +1057,17 @@ tr.status-직접입력 {
           <h3 class="card-title" id="record-title">기록 작성</h3>
         </div>
         <div class="card-content">
+          <!-- Address selection for record mode -->
+          <div id="record-address-selector" class="form-group" style="display: none;">
+            <label class="form-label">기록할 출장지 선택</label>
+            <select id="recordAddressSelect" class="form-select" onchange="selectRecordAddress()">
+              <option value="" disabled selected>출장지를 선택하세요</option>
+            </select>
+            <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">
+              💡 기록을 작성할 출장지를 먼저 선택해주세요
+            </div>
+          </div>
+          
           <div class="form-group">
             <label class="form-label">출장 상태 선택</label>
             <select id="recordStatusSelect" class="form-select" onchange="handleRecordStatusChange()">
@@ -2322,6 +2348,8 @@ function selectMode(mode) {
   } else if (mode === 'prepare') {
     // Show selected map app if exists
     updateMapSelection();
+  } else if (mode === 'record') {
+    initializeRecordMode();
   }
 }
 
@@ -2919,6 +2947,9 @@ function openRecordMode(address) {
   AppState.currentAddress = address;
   selectMode('record');
   
+  // Hide address selector when coming from specific address
+  document.getElementById('record-address-selector').style.display = 'none';
+  
   // Pre-fill record form
   document.getElementById('record-title').textContent = `${address} - 기록 작성`;
   document.getElementById('recordStatusSelect').value = statusMap[address] || '';
@@ -2933,6 +2964,64 @@ function openRecordMode(address) {
   }
   
   renderRecordPhotos();
+}
+
+// Initialize record mode when accessed directly
+function initializeRecordMode() {
+  // Check if we have a current address
+  if (!AppState.currentAddress) {
+    // Show address selector
+    document.getElementById('record-address-selector').style.display = 'block';
+    document.getElementById('record-title').textContent = '기록 작성';
+    
+    // Populate address dropdown
+    const addressSelect = document.getElementById('recordAddressSelect');
+    addressSelect.innerHTML = '<option value="" disabled selected>출장지를 선택하세요</option>';
+    
+    주소목록.forEach(address => {
+      const option = document.createElement('option');
+      option.value = address;
+      option.textContent = address;
+      addressSelect.appendChild(option);
+    });
+    
+    // Clear form
+    document.getElementById('recordStatusSelect').value = '';
+    document.getElementById('recordMemo').value = '';
+    document.getElementById('customRecordStatus').style.display = 'none';
+    document.getElementById('recordPhotoContainer').innerHTML = '';
+  } else {
+    // Address already selected, hide selector
+    document.getElementById('record-address-selector').style.display = 'none';
+  }
+}
+
+// Handle address selection in record mode
+function selectRecordAddress() {
+  const selectedAddress = document.getElementById('recordAddressSelect').value;
+  if (selectedAddress) {
+    AppState.currentAddress = selectedAddress;
+    
+    // Hide address selector
+    document.getElementById('record-address-selector').style.display = 'none';
+    
+    // Update title and pre-fill form
+    document.getElementById('record-title').textContent = `${selectedAddress} - 기록 작성`;
+    document.getElementById('recordStatusSelect').value = statusMap[selectedAddress] || '';
+    document.getElementById('recordMemo').value = memoMap[selectedAddress] || '';
+    
+    // Handle custom status
+    const status = statusMap[selectedAddress] || '';
+    if (!['출장완료', '미출장', ''].includes(status)) {
+      document.getElementById('recordStatusSelect').value = '직접입력';
+      document.getElementById('customRecordStatus').style.display = 'block';
+      document.getElementById('customRecordStatus').value = status;
+    } else {
+      document.getElementById('customRecordStatus').style.display = 'none';
+    }
+    
+    renderRecordPhotos();
+  }
 }
 
 // Record Mode Functions
